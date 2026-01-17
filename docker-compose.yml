@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: neurokind_postgres
+    environment:
+      POSTGRES_USER: neurokind
+      POSTGRES_PASSWORD: neurokind
+      POSTGRES_DB: neurokind
+    ports:
+      - "5432:5432"
+    volumes:
+      - neurokind_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: neurokind_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  neurokind_pgdata:
+    driver: local

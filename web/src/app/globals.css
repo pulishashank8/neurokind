@@ -1,0 +1,332 @@
+@import "tailwindcss";
+
+/* ============================================
+   NEUROKIND DESIGN SYSTEM
+   Sensory-friendly, accessible, professional
+   ============================================ */
+
+:root {
+  /* Spacing System (consistent, generous spacing) */
+  --space-xs: 0.5rem;      /* 8px */
+  --space-sm: 0.75rem;     /* 12px */
+  --space-md: 1rem;        /* 16px */
+  --space-lg: 1.5rem;      /* 24px */
+  --space-xl: 2rem;        /* 32px */
+  --space-2xl: 3rem;       /* 48px */
+  --space-3xl: 4rem;       /* 64px */
+
+  /* Border Radius (soft, rounded corners) */
+  --radius-sm: 0.5rem;     /* 8px */
+  --radius-md: 0.75rem;    /* 12px */
+  --radius-lg: 1rem;       /* 16px */
+  --radius-xl: 1.5rem;     /* 24px */
+  --radius-full: 9999px;
+
+  /* Shadows (soft, subtle depth) */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+
+  /* Transitions (subtle, smooth) */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Focus Ring (visible, accessible) */
+  --focus-ring: 0 0 0 3px var(--primary-light);
+  --focus-ring-offset: 2px;
+}
+
+/* ============================================
+   THEME A: CALM OCEAN (Default)
+   Soft blues, greens, lavender - soothing
+   ============================================ */
+[data-theme="calm-ocean"],
+:root {
+  /* Background (soft gradient base) */
+  --bg-base: #f7f9fb;
+  --bg-elevated: #ffffff;
+  --bg-gradient-from: #f0f4f8;
+  --bg-gradient-to: #e8f0f7;
+  
+  /* Primary (muted ocean blue/teal) */
+  --primary: #4a90a4;
+  --primary-hover: #3a7a8d;
+  --primary-light: #d4e9f0;
+  --primary-dark: #2d5f6e;
+  
+  /* Secondary (soft lavender) */
+  --secondary: #9b8fb3;
+  --secondary-hover: #8578a0;
+  --secondary-light: #e8e3f0;
+  
+  /* Accent (calming teal) */
+  --accent: #5fa5a5;
+  --accent-light: #d1e8e8;
+  
+  /* Text (charcoal, not pure black) */
+  --text-primary: #2d3748;
+  --text-secondary: #5a6c7d;
+  --text-muted: #8896a5;
+  --text-on-primary: #ffffff;
+  
+  /* Cards & Surfaces (warm off-white) */
+  --surface: #fdfcfb;
+  --surface-hover: #f9f8f7;
+  
+  /* Borders (subtle gray-blue) */
+  --border-light: #e1e8ed;
+  --border-base: #cbd5e0;
+  --border-dark: #a0aec0;
+  
+  /* Status Colors (muted, not harsh) */
+  --success: #66a885;
+  --success-light: #d8ece3;
+  --warning: #d9a84a;
+  --warning-light: #f7ead1;
+  --error: #c8756e;
+  --error-light: #f5e0de;
+  --info: #6b95b8;
+  --info-light: #dce8f2;
+}
+
+/* ============================================
+   THEME B: SPACE NIGHT
+   Deep navy, soft cyan - calming night theme
+   ============================================ */
+[data-theme="space-night"] {
+  /* Background (deep navy with subtle texture) */
+  --bg-base: #1a1f35;
+  --bg-elevated: #212842;
+  --bg-gradient-from: #1a1f35;
+  --bg-gradient-to: #252b48;
+  
+  /* Primary (muted cyan) */
+  --primary: #70b5c9;
+  --primary-hover: #8dc4d5;
+  --primary-light: #2a3f52;
+  --primary-dark: #5a9db0;
+  
+  /* Secondary (soft purple) */
+  --secondary: #a68fb8;
+  --secondary-hover: #b8a3c8;
+  --secondary-light: #3a3254;
+  
+  /* Accent (calming aqua) */
+  --accent: #7fb5b5;
+  --accent-light: #2d4547;
+  
+  /* Text (soft gray/white) */
+  --text-primary: #e8edf2;
+  --text-secondary: #b8c5d3;
+  --text-muted: #8896a5;
+  --text-on-primary: #1a1f35;
+  
+  /* Cards & Surfaces (elevated navy) */
+  --surface: #242b45;
+  --surface-hover: #2a3152;
+  
+  /* Borders (subtle blue-gray) */
+  --border-light: #2f3a54;
+  --border-base: #3f4d6b;
+  --border-dark: #5a6c89;
+  
+  /* Status Colors (muted for dark theme) */
+  --success: #7abc94;
+  --success-light: #2a3d33;
+  --warning: #ddb86a;
+  --warning-light: #3d3828;
+  --error: #d88f87;
+  --error-light: #3d2e2d;
+  --info: #85adc9;
+  --info-light: #2a3642;
+  
+  /* Shadows (deeper for dark mode) */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+}
+
+/* ============================================
+   TAILWIND THEME INTEGRATION
+   ============================================ */
+@theme inline {
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-surface: var(--surface);
+  --color-border: var(--border-base);
+  
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  background: linear-gradient(135deg, var(--bg-gradient-from) 0%, var(--bg-gradient-to) 100%);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans, system-ui, -apple-system, sans-serif);
+  line-height: 1.6;
+  min-height: 100vh;
+  transition: background var(--transition-slow), color var(--transition-slow);
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: var(--space-md);
+}
+
+h1 { font-size: 2.5rem; letter-spacing: -0.02em; }
+h2 { font-size: 2rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+
+p {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: var(--space-md);
+}
+
+/* ============================================
+   FOCUS STYLES (Accessibility)
+   ============================================ */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-lg);
+  transition: all var(--transition-base);
+}
+
+.card:hover {
+  background: var(--surface-hover);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.btn {
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  padding: var(--space-sm) var(--space-lg);
+  transition: all var(--transition-fast);
+  border: none;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--text-on-primary);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 2px solid var(--primary);
+}
+
+.btn-secondary:hover {
+  background: var(--primary-light);
+}
+
+.input {
+  background: var(--bg-elevated);
+  border: 2px solid var(--border-base);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 1rem;
+  padding: var(--space-sm) var(--space-md);
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+
+.input:hover {
+  border-color: var(--primary-light);
+}
+
+.input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+/* ============================================
+   SKELETON LOADERS
+   ============================================ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--border-light) 0%,
+    var(--surface) 50%,
+    var(--border-light) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

@@ -1,0 +1,564 @@
+// NeuroKind Prisma Schema - Production-grade forum for autistic parents
+// Includes auth, community, providers, AI chat, notifications, and analytics
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Role {
+  PARENT
+  THERAPIST
+  MODERATOR
+  ADMIN
+}
+
+enum PostStatus {
+  ACTIVE
+  REMOVED
+  LOCKED
+  PINNED
+  DRAFT
+}
+
+enum CommentStatus {
+  ACTIVE
+  REMOVED
+  HIDDEN
+}
+
+enum VoteType {
+  POST
+  COMMENT
+}
+
+enum ReportTargetType {
+  POST
+  COMMENT
+  USER
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  MISINFO
+  SELF_HARM
+  INAPPROPRIATE_CONTENT
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum ModerationActionType {
+  REMOVE
+  LOCK
+  PIN
+  UNPIN
+  SHADOWBAN
+  UNSHADOWBAN
+  WARN
+  VERIFY_THERAPIST
+  REJECT_VERIFICATION
+  MUTE
+  UNMUTE
+}
+
+enum ProviderSource {
+  GOOGLE_PLACES
+  OSM
+  MANUAL
+}
+
+enum ProviderSpecialty {
+  ABA
+  OT
+  SLP
+  DEVELOPMENTAL_PEDIATRICS
+  PSYCHOLOGIST
+  PSYCHIATRIST
+  NEURODEVELOPMENTAL
+  SPEECH_PATHOLOGY
+  OCCUPATIONAL_THERAPY
+  BEHAVIORAL_THERAPY
+  SOCIAL_WORKER
+  COUNSELOR
+}
+
+enum ProviderClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  POST_COMMENT
+  COMMENT_REPLY
+  POST_LIKE
+  COMMENT_LIKE
+  MENTION
+  FOLLOW
+  MESSAGE
+  MODERATION_ACTION
+  VERIFICATION_REQUEST
+  SYSTEM
+}
+
+enum ResourceCategory {
+  EDUCATION
+  THERAPY
+  NUTRITION
+  BEHAVIOR
+  SLEEP
+  SOCIAL_SKILLS
+  LEGAL
+  FINANCIAL
+  COMMUNITY
+  OTHER
+}
+
+// ============================================================================
+// AUTH & USERS
+// ============================================================================
+
+model User {
+  id                    String     @id @default(cuid())
+  email                 String     @unique
+  hashedPassword        String?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  lastLoginAt           DateTime?
+
+  // Relations
+  profile               Profile?
+  userRoles             UserRole[]
+  posts                 Post[]
+  comments              Comment[]
+  votes                 Vote[]
+  bookmarks             Bookmark[]
+  reports               Report[]         @relation("ReporterUser")
+  moderationActions     ModerationAction[] @relation("ModeratorUser")
+  moderationTargets     ModerationAction[] @relation("TargetUser")
+  providerReviews       ProviderReview[]
+  claimedProviders      Provider[]
+  aiConversations       AIConversation[]
+  aiMessages            AIMessage[]
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+  rateLimitLogs         RateLimitLog[]
+  createdResources      Resource[]
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+model Profile {
+  id                    String     @id @default(cuid())
+  userId                String     @unique
+  username              String     @unique @db.VarChar(50)
+  displayName           String     @db.VarChar(255)
+  bio                   String?    @db.Text
+  avatarUrl             String?
+  location              String?
+  website               String?
+  verifiedTherapist     Boolean    @default(false)
+  verifiedAt            DateTime?
+  shadowbanned          Boolean    @default(false)
+  shadowbannedAt        DateTime?
+  notificationPrefs     Json       @default("{}")
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([username])
+  @@index([verifiedTherapist])
+  @@index([shadowbanned])
+}
+
+model UserRole {
+  id                    String     @id @default(cuid())
+  userId                String
+  role                  Role
+  grantedAt             DateTime   @default(now())
+  grantedBy             String?
+  createdAt             DateTime   @default(now())
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@index([userId])
+  @@index([role])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id                    String     @id @default(cuid())
+  userId                String
+  action                String
+  targetType            String?
+  targetId              String?
+  changes               Json?
+  ipAddress             String?
+  userAgent             String?
+  createdAt             DateTime   @default(now())
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([targetType])
+  @@index([targetId])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// COMMUNITY - POSTS, COMMENTS, VOTES
+// ============================================================================
+
+model Category {
+  id                    String     @id @default(cuid())
+  name                  String     @unique @db.VarChar(100)
+  slug                  String     @unique @db.VarChar(100)
+  description           String?    @db.Text
+  icon                  String?
+  order                 Int        @default(0)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  posts                 Post[]
+
+  @@index([slug])
+  @@index([order])
+}
+
+model Tag {
+  id                    String     @id @default(cuid())
+  name                  String     @unique @db.VarChar(50)
+  slug                  String     @unique @db.VarChar(50)
+  description           String?
+  color                 String?    @db.VarChar(7)
+  createdAt             DateTime   @default(now())
+
+  posts                 Post[]
+
+  @@index([slug])
+  @@index([name])
+}
+
+model Post {
+  id                    String     @id @default(cuid())
+  title                 String     @db.VarChar(255)
+  content               String     @db.Text
+  authorId              String?
+  isAnonymous           Boolean    @default(false)
+  categoryId            String
+  status                PostStatus @default(ACTIVE)
+  viewCount             Int        @default(0)
+  commentCount          Int        @default(0)
+  voteScore             Int        @default(0)
+  isPinned              Boolean    @default(false)
+  isLocked              Boolean    @default(false)
+  pinnedAt              DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  author                User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  category              Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  tags                  Tag[]
+  comments              Comment[]
+  bookmarks             Bookmark[]
+  moderationActions     ModerationAction[]
+
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([viewCount])
+}
+
+model Comment {
+  id                    String     @id @default(cuid())
+  content               String     @db.Text
+  authorId              String
+  postId                String
+  parentCommentId       String?
+  status                CommentStatus @default(ACTIVE)
+  isAnonymous           Boolean    @default(false)
+  voteScore             Int        @default(0)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  author                User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post                  Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentComment         Comment?   @relation("ChildComments", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  childComments         Comment[]  @relation("ChildComments")
+  moderationActions     ModerationAction[]
+
+  @@index([authorId])
+  @@index([postId])
+  @@index([parentCommentId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Vote {
+  id                    String     @id @default(cuid())
+  userId                String
+  targetType            VoteType
+  targetId              String
+  value                 Int        @db.SmallInt // +1 or -1
+  createdAt             DateTime   @default(now())
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetId, targetType])
+  @@index([userId])
+  @@index([targetId])
+  @@index([targetType])
+  @@index([createdAt])
+}
+
+model Bookmark {
+  id                    String     @id @default(cuid())
+  userId                String
+  postId                String
+  createdAt             DateTime   @default(now())
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post                  Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+  @@index([createdAt])
+}
+
+model Report {
+  id                    String     @id @default(cuid())
+  reporterId            String
+  targetType            ReportTargetType
+  targetId              String
+  reason                ReportReason
+  description           String?    @db.Text
+  status                ReportStatus @default(OPEN)
+  reviewedBy            String?
+  reviewedAt            DateTime?
+  notes                 String?    @db.Text
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  reporter              User       @relation("ReporterUser", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([targetType])
+  @@index([targetId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ModerationAction {
+  id                    String     @id @default(cuid())
+  action                ModerationActionType
+  actorId               String
+  targetUserId          String?
+  postId                String?
+  commentId             String?
+  notes                 String?    @db.Text
+  createdAt             DateTime   @default(now())
+
+  actor                 User       @relation("ModeratorUser", fields: [actorId], references: [id], onDelete: Cascade)
+  targetUser            User?      @relation("TargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+  post                  Post?      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment               Comment?   @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([actorId])
+  @@index([targetUserId])
+  @@index([postId])
+  @@index([commentId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// PROVIDERS DIRECTORY
+// ============================================================================
+
+model Provider {
+  id                    String     @id @default(cuid())
+  externalSource        ProviderSource
+  externalId            String?    @db.VarChar(255)
+  name                  String     @db.VarChar(255)
+  phone                  String?    @db.VarChar(20)
+  address               String?    @db.Text
+  city                  String?    @db.VarChar(100)
+  state                 String?    @db.VarChar(50)
+  zipCode               String?    @db.VarChar(10)
+  latitude              Float?
+  longitude             Float?
+  website               String?
+  email                 String?
+  specialties           ProviderSpecialty[]
+  rating                Decimal?   @db.Decimal(3, 2)
+  totalReviews          Int        @default(0)
+  isVerified            Boolean    @default(false)
+  verifiedAt            DateTime?
+  claimedByUserId       String?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  reviews               ProviderReview[]
+  claimedByUser         User?      @relation(fields: [claimedByUserId], references: [id], onDelete: SetNull)
+  claimRequests         ProviderClaimRequest[]
+
+  @@unique([externalSource, externalId])
+  @@index([externalSource])
+  @@index([name])
+  @@index([city])
+  @@index([isVerified])
+  @@index([createdAt])
+  @@index([latitude, longitude])
+}
+
+model ProviderReview {
+  id                    String     @id @default(cuid())
+  providerId            String
+  authorId              String
+  rating                Int        @db.SmallInt // 1-5
+  content               String?    @db.Text
+  status                String     @default("ACTIVE")
+  helpful               Int        @default(0)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  provider              Provider   @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  author                User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, authorId])
+  @@index([providerId])
+  @@index([authorId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+model ProviderClaimRequest {
+  id                    String     @id @default(cuid())
+  providerId            String
+  requesterUserId       String
+  status                ProviderClaimStatus @default(PENDING)
+  message               String?    @db.Text
+  reviewedAt            DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  provider              Provider   @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, requesterUserId])
+  @@index([providerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// AI CHAT
+// ============================================================================
+
+model AIConversation {
+  id                    String     @id @default(cuid())
+  userId                String
+  title                 String     @db.VarChar(255)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages              AIMessage[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model AIMessage {
+  id                    String     @id @default(cuid())
+  conversationId        String
+  userId                String
+  role                  String     // "user", "assistant", "system"
+  content               String     @db.Text
+  tokens                Int?
+  createdAt             DateTime   @default(now())
+
+  conversation          AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model RateLimitLog {
+  id                    String     @id @default(cuid())
+  userId                String
+  actionType            String     @db.VarChar(50)
+  createdAt             DateTime   @default(now())
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([actionType])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+model Notification {
+  id                    String     @id @default(cuid())
+  userId                String
+  type                  NotificationType
+  payload               Json
+  readAt                DateTime?
+  createdAt             DateTime   @default(now())
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([readAt])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// RESOURCES
+// ============================================================================
+
+model Resource {
+  id                    String     @id @default(cuid())
+  title                 String     @db.VarChar(255)
+  content               String?    @db.Text
+  link                  String?
+  category              ResourceCategory
+  createdBy             String
+  status                String     @default("ACTIVE")
+  views                 Int        @default(0)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  creator               User       @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([createdBy])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+}

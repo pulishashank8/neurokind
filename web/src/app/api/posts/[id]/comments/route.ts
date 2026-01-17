@@ -1,0 +1,247 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
+import { createCommentSchema } from "@/lib/validations/community";
+import { canModerate } from "@/lib/rbac";
+import DOMPurify from "isomorphic-dompurify";
+import { rateLimit, RATE_LIMITS, invalidateCache } from "@/lib/redis";
+
+// GET /api/posts/[id]/comments - Get threaded comments
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // Verify post exists
+    const post = await prisma.post.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    // Fetch all comments for the post
+    const comments = await prisma.comment.findMany({
+      where: {
+        postId: id,
+        status: { not: "REMOVED" },
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            profile: {
+              select: {
+                username: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    // Build threaded structure
+    const commentMap = new Map();
+    const rootComments: any[] = [];
+
+    // First pass: create comment objects
+    comments.forEach((comment) => {
+      const formattedComment = {
+        id: comment.id,
+        content: comment.content,
+        createdAt: comment.createdAt,
+        updatedAt: comment.updatedAt,
+        author: comment.isAnonymous
+          ? {
+              id: "anonymous",
+              username: "Anonymous",
+              avatarUrl: null,
+            }
+          : {
+              id: comment.author.id,
+              username: comment.author.profile?.username || "Unknown",
+              avatarUrl: comment.author.profile?.avatarUrl || null,
+            },
+        voteScore: comment.voteScore,
+        isAnonymous: comment.isAnonymous,
+        parentCommentId: comment.parentCommentId,
+        children: [],
+      };
+      commentMap.set(comment.id, formattedComment);
+    });
+
+    // Second pass: build tree structure
+    commentMap.forEach((comment) => {
+      if (comment.parentCommentId) {
+        const parent = commentMap.get(comment.parentCommentId);
+        if (parent) {
+          parent.children.push(comment);
+        }
+      } else {
+        rootComments.push(comment);
+      }
+    });
+
+    return NextResponse.json({ comments: rootComments });
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch comments" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/posts/[id]/comments - Create a comment
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    
+    // Add postId to body for validation
+    const validation = createCommentSchema.safeParse({ ...body, postId: id });
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: validation.error.errors },
+        { status: 400 }
+      );
+    }
+    // Check rate limit
+    const rateLimitKey = `ratelimit:comment:${session.user.id}`;
+    const { success, remaining, reset } = await rateLimit(rateLimitKey, RATE_LIMITS.CREATE_COMMENT);
+
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many comments. Please try again later.", remaining, reset },
+        { status: 429, headers: { "Retry-After": String(reset) } }
+      );
+    }
+    const { content, parentCommentId, isAnonymous } = validation.data;
+
+    // Check if post exists and is not locked
+    const post = await prisma.post.findUnique({
+      where: { id },
+      select: { isLocked: true },
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    // If post is locked, only moderators can comment
+    if (post.isLocked) {
+      const isModerator = await canModerate(session.user.id);
+      if (!isModerator) {
+        return NextResponse.json(
+          { error: "This post is locked. Only moderators can comment." },
+          { status: 403 }
+        );
+      }
+    }
+
+    // If replying to a comment, verify parent exists
+    if (parentCommentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: parentCommentId },
+        select: { postId: true },
+      });
+
+      if (!parentComment) {
+        return NextResponse.json(
+          { error: "Parent comment not found" },
+          { status: 404 }
+        );
+      }
+
+      if (parentComment.postId !== id) {
+        return NextResponse.json(
+          { error: "Parent comment does not belong to this post" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Sanitize content
+    const sanitizedContent = DOMPurify.sanitize(content, {
+      ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "a", "code"],
+      ALLOWED_ATTR: ["href", "target", "rel"],
+    });
+
+    // Create comment
+    const comment = await prisma.comment.create({
+      data: {
+        content: sanitizedContent,
+        authorId: session.user.id,
+        postId: id,
+        parentCommentId: parentCommentId || null,
+        isAnonymous,
+        status: "ACTIVE", // Auto-approve
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            profile: {
+              select: {
+                username: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Format response
+    const formattedComment = {
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      author: comment.isAnonymous
+        ? {
+            id: "anonymous",
+            username: "Anonymous",
+            avatarUrl: null,
+          }
+        : {
+            id: comment.author.id,
+            username: comment.author.profile?.username || "Unknown",
+            avatarUrl: comment.author.profile?.avatarUrl || null,
+          },
+      voteScore: comment.voteScore,
+      isAnonymous: comment.isAnonymous,
+      parentCommentId: comment.parentCommentId,
+      children: [],
+    };
+
+    // Invalidate post comments cache
+    await invalidateCache(`comments:${id}:*`, { prefix: "posts" });
+
+    return NextResponse.json(formattedComment, { status: 201, headers: { "X-RateLimit-Remaining": String(remaining) } });
+  } catch (error) {
+    console.error("Error creating comment:", error);
+    return NextResponse.json(
+      { error: "Failed to create comment" },
+      { status: 500 }
+    );
+  }
+}
