@@ -31,38 +31,59 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Find user by email
-        const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email },
-          include: { userRoles: true },
-        });
+        try {
+          // Find user by email
+          const user = await prisma.user.findUnique({
+            where: { email: parsed.data.email },
+            include: { userRoles: true, profile: true },
+          });
 
-        if (!user) {
+          if (!user) {
+            return null;
+          }
+
+          // Check password
+          const passwordMatch = await bcryptjs.compare(
+            parsed.data.password,
+            user.hashedPassword || ""
+          );
+
+          if (!passwordMatch) {
+            return null;
+          }
+
+          // Update lastLoginAt
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+          });
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.profile?.displayName || user.profile?.username || user.email,
+            username: user.profile?.username,
+            roles: user.userRoles.map((ur: any) => ur.role),
+          };
+        } catch (err) {
+          // Fallback: allow dev login without DB if env flag is set
+          if (process.env.ALLOW_DEV_LOGIN_WITHOUT_DB === "true") {
+            const devAccounts: Record<string, { password: string; roles: string[] }> = {
+              "admin@neurokind.local": { password: "admin123", roles: ["ADMIN"] },
+              "parent@neurokind.local": { password: "parent123", roles: ["PARENT"] },
+            };
+            const acct = devAccounts[parsed.data.email];
+            if (acct && acct.password === parsed.data.password) {
+              return {
+                id: parsed.data.email,
+                email: parsed.data.email,
+                name: parsed.data.email,
+                roles: acct.roles,
+              } as any;
+            }
+          }
           return null;
         }
-
-        // Check password
-        const passwordMatch = await bcryptjs.compare(
-          parsed.data.password,
-          user.hashedPassword || ""
-        );
-
-        if (!passwordMatch) {
-          return null;
-        }
-
-        // Update lastLoginAt
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastLoginAt: new Date() },
-        });
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.email,
-          roles: user.userRoles.map((ur: any) => ur.role),
-        };
       },
     }),
 
@@ -93,19 +114,78 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
+    async signIn({ user, account }) {
+      // For Google OAuth: auto-create profile if user doesn't have one
+      if (account?.provider === "google" && user.email) {
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+            include: { profile: true, userRoles: true },
+          });
+
+          if (existingUser && !existingUser.profile) {
+            // Generate username from Google name or email
+            let baseUsername = user.name?.toLowerCase().replace(/\s+/g, "") || user.email.split("@")[0];
+            baseUsername = baseUsername.replace(/[^a-z0-9]/g, "");
+            
+            // Ensure username is unique
+            let username = baseUsername;
+            let counter = 1;
+            while (true) {
+              const exists = await prisma.profile.findUnique({ where: { username } });
+              if (!exists) break;
+              username = `${baseUsername}${counter}`;
+              counter++;
+            }
+
+            // Create profile
+            await prisma.profile.create({
+              data: {
+                userId: existingUser.id,
+                username,
+                displayName: user.name || username,
+              },
+            });
+
+            // Ensure user has PARENT role
+            if (existingUser.userRoles.length === 0) {
+              await prisma.userRole.create({
+                data: {
+                  userId: existingUser.id,
+                  role: "PARENT",
+                },
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error creating profile for Google user:", err);
+        }
+      }
+      return true;
+    },
+
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.username = (user as any).username;
         token.roles = (user as any).roles || [];
       }
 
-      // Refresh roles on every token update
+      // Refresh user data including username on every token update
       if (token.id) {
-        const userRoles = await prisma.userRole.findMany({
-          where: { userId: token.id as string },
-          select: { role: true },
-        });
-        token.roles = userRoles.map((ur: any) => ur.role);
+        try {
+          const userData = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            include: { userRoles: true, profile: true },
+          });
+          if (userData) {
+            token.roles = userData.userRoles.map((ur: any) => ur.role);
+            token.name = userData.profile?.displayName || userData.profile?.username || userData.email;
+            token.username = userData.profile?.username;
+          }
+        } catch {
+          // If DB unavailable, keep existing data (dev fallback)
+        }
       }
 
       return token;
@@ -114,7 +194,10 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id as string;
+        (session.user as any).username = token.username as string;
         (session.user as any).roles = token.roles as string[];
+        // Ensure session.user.name is set to displayName/username
+        session.user.name = token.name as string;
       }
       return session;
     },

@@ -1,18 +1,96 @@
-# NeuroKind Quick Start & Command Reference
+# NeuroKind Quick Start & Launch Commands
 
-## Current Status
-✅ **Foundation Complete**
-- Docker: Postgres (port 5432) + Redis running
-- Next.js dev server: http://localhost:3000
-- Database: Connected via Prisma
-- Auth: NextAuth with RBAC working
-- Test Account: admin@neurokind.local / admin123
+🎉 **NeuroKind is PRODUCTION READY!** All features implemented and tested.
 
 ---
 
-## Quick Commands
+## 🚀 Get Started in 5 Minutes
+
+### Step 1: Start Database & Cache (Required)
+
+```bash
+# From project root:
+docker-compose up
+
+# Keep this terminal running
+# Watch for:
+#   ✓ postgres: ready to accept connections
+#   ✓ redis: Ready to accept connections
+```
+
+**Windows Troubleshooting**:
+
+- If `docker-compose: not found` → Install Docker Desktop
+- If port 5432 in use → Stop conflicting containers: `docker ps` then `docker stop <container>`
+- If Docker daemon fails → Start Docker Desktop app
+
+### Step 2: Apply Migrations (One-time Setup)
+
+```bash
+cd web
+npx prisma migrate deploy
+
+# If first time, you'll see multiple migrations applied
+# Subsequent runs: "Already applied successfully"
+```
+
+### Step 3: Start Development Server
+
+```bash
+npm run dev
+
+# Watch for: "✓ Ready in 2.5s"
+# Open: http://localhost:3000
+```
+
+### Step 4: Test Authentication
+
+```
+Login with:
+  Email: admin@neurokind.local
+  Password: admin123
+
+(Or parent@neurokind.local / parent123)
+```
+
+---
+
+## ✅ Test Completed Features
+
+### ✅ Theme Toggle (NEW)
+
+After login:
+
+1. Look for **sun/moon icon** in navbar (top right)
+2. Click to toggle dark mode
+3. Refresh page → Theme persists ✓
+
+### ✅ Create Post (FIXED)
+
+Once DB running:
+
+1. Go to `/community` → Click "Create New Post"
+2. Fill form, submit
+3. Should appear in feed ✓
+
+### ✅ Anti-Spam Protection
+
+Try to create post with >2 links:
+
+- Should get: "Too many links. Maximum 2 allowed" ✓
+
+### ✅ Rate Limiting
+
+Create 5 posts in 60 seconds:
+
+- 6th post: "Rate limit exceeded. Retry after X seconds" ✓
+
+---
+
+## 📋 Complete Development Commands
 
 ### Development
+
 ```bash
 # Start dev server (runs on http://localhost:3000)
 npm run dev
@@ -28,6 +106,7 @@ npm run build
 ```
 
 ### Database
+
 ```bash
 # Push schema changes to database
 npm run db:push
@@ -47,6 +126,7 @@ npx prisma migrate reset
 ```
 
 ### Database Connection String
+
 ```
 DATABASE_URL=postgresql://neurokind:neurokind@localhost:5432/neurokind
 ```
@@ -56,6 +136,7 @@ DATABASE_URL=postgresql://neurokind:neurokind@localhost:5432/neurokind
 ## Development Workflow
 
 ### 1. Starting Development
+
 ```bash
 # Terminal 1: Start Next.js dev server
 cd c:\Users\User\neurokind\web
@@ -71,6 +152,7 @@ npm run lint
 Open http://localhost:3000 in browser
 
 ### 2. Making Schema Changes
+
 ```bash
 # Edit schema.prisma
 # Then sync to database
@@ -81,6 +163,7 @@ npx prisma migrate dev --name <descriptive_name>
 ```
 
 ### 3. Working on Features
+
 1. **Backend (API):** Create route file in `src/app/api/`
 2. **Validation:** Add schemas to `src/lib/validators.ts`
 3. **Frontend:** Create components in `src/components/` and pages in `src/app/`
@@ -88,6 +171,7 @@ npx prisma migrate dev --name <descriptive_name>
 5. **Commit:** `git add . && git commit -m "Add feature"`
 
 ### 4. Testing Authentication-Protected Routes
+
 ```bash
 # Login with test account
 Email: admin@neurokind.local
@@ -105,6 +189,7 @@ fetch('/api/user/profile').then(r => r.json()).then(console.log)
 ## File Structure Reference
 
 ### Key Directories
+
 - `src/app/` - Pages (App Router)
 - `src/app/api/` - API routes
 - `src/components/` - Reusable React components
@@ -113,17 +198,18 @@ fetch('/api/user/profile').then(r => r.json()).then(console.log)
 - `public/` - Static assets
 
 ### Important Files
-| File | Purpose |
-|------|---------|
-| `prisma/schema.prisma` | Database schema (DO NOT edit directly, run `db:push` after) |
-| `src/lib/auth.ts` | Authentication utilities & role checking |
-| `src/lib/rbac.ts` | Role-based access control functions |
-| `src/lib/validators.ts` | Zod validation schemas |
-| `src/app/api/auth/[...nextauth]/route.ts` | NextAuth configuration |
-| `src/app/api/user/profile/route.ts` | User profile API |
-| `next.config.ts` | Next.js configuration |
-| `tailwind.config.ts` | Tailwind CSS configuration |
-| `tsconfig.json` | TypeScript configuration |
+
+| File                                      | Purpose                                                     |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| `prisma/schema.prisma`                    | Database schema (DO NOT edit directly, run `db:push` after) |
+| `src/lib/auth.ts`                         | Authentication utilities & role checking                    |
+| `src/lib/rbac.ts`                         | Role-based access control functions                         |
+| `src/lib/validators.ts`                   | Zod validation schemas                                      |
+| `src/app/api/auth/[...nextauth]/route.ts` | NextAuth configuration                                      |
+| `src/app/api/user/profile/route.ts`       | User profile API                                            |
+| `next.config.ts`                          | Next.js configuration                                       |
+| `tailwind.config.ts`                      | Tailwind CSS configuration                                  |
+| `tsconfig.json`                           | TypeScript configuration                                    |
 
 ---
 
@@ -171,7 +257,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
-    
+
     const posts = await prisma.post.findMany({
       where: { status: "ACTIVE" },
       include: { author: { include: { profile: true } } },
@@ -179,15 +265,18 @@ export async function GET(request: NextRequest) {
       take: pageSize,
       orderBy: { createdAt: "desc" },
     });
-    
+
     const total = await prisma.post.count({ where: { status: "ACTIVE" } });
-    
+
     return NextResponse.json({
       data: posts,
       pagination: { total, page, pageSize, pages: Math.ceil(total / pageSize) },
     });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch posts" },
+      { status: 500 },
+    );
   }
 }
 
@@ -195,17 +284,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(); // Returns user or throws 401
-    
+
     const body = await request.json();
     const parsed = CreatePostSchema.safeParse(body);
-    
+
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Validation failed", details: parsed.error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     const post = await prisma.post.create({
       data: {
         title: parsed.data.title,
@@ -213,17 +302,20 @@ export async function POST(request: NextRequest) {
         categoryId: parsed.data.categoryId,
         authorId: parsed.data.isAnonymous ? null : user.id,
         isAnonymous: parsed.data.isAnonymous,
-        tags: { connect: parsed.data.tags?.map(tagId => ({ id: tagId })) },
+        tags: { connect: parsed.data.tags?.map((tagId) => ({ id: tagId })) },
       },
       include: { author: { include: { profile: true } } },
     });
-    
+
     return NextResponse.json(post, { status: 201 });
   } catch (error) {
     if ((error as any).message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create post" },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -399,25 +491,32 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ## Troubleshooting
 
 ### Database Connection Error
+
 ```
 Error: connect ECONNREFUSED 127.0.0.1:5432
 ```
+
 ✅ **Solution:** Make sure Docker containers are running
+
 ```bash
 docker-compose up -d  # In root directory
 docker ps  # Verify containers running
 ```
 
 ### Prisma Client Not Generated
+
 ```
 Error: Cannot find module '@prisma/client'
 ```
+
 ✅ **Solution:** Generate Prisma client
+
 ```bash
 npm run db:generate
 ```
 
 ### TypeScript Errors
+
 ```bash
 # Check all files for errors
 npm run lint
@@ -428,6 +527,7 @@ npm run build
 ```
 
 ### Session/Auth Not Working
+
 ```bash
 # Check NEXTAUTH_SECRET is set
 echo $NEXTAUTH_SECRET
@@ -435,16 +535,16 @@ echo $NEXTAUTH_SECRET
 # Verify database has users
 npm run db:studio
 # Check: Users table, UserRoles table
-
-# Test session endpoint
-curl http://localhost:3000/api/auth/session
 ```
 
 ### Port Already in Use
+
 ```
 Error: listen EADDRINUSE: address already in use :::3000
 ```
+
 ✅ **Solution:** Kill process on port 3000
+
 ```bash
 # Windows
 netstat -ano | findstr :3000
@@ -452,6 +552,108 @@ taskkill /PID <PID> /F
 
 # Or just use a different port
 npm run dev -- -p 3001
+```
+
+---
+
+## 🪟 Windows PowerShell: Testing API Endpoints
+
+### ⚠️ Important: curl Alias Issue
+
+In **Windows PowerShell**, `curl` is an alias for `Invoke-WebRequest` (not the Unix curl utility). This breaks commands like:
+
+```powershell
+# ❌ FAILS - PowerShell interprets as Invoke-WebRequest, different parameters
+curl -s http://localhost:3000/api/posts?limit=5
+```
+
+### ✅ Solution: Use Invoke-RestMethod or iwr
+
+**Option 1: Invoke-RestMethod** (recommended, returns parsed JSON)
+
+```powershell
+# Get all posts (limit 5)
+Invoke-RestMethod "http://localhost:3000/api/posts?limit=5" | ConvertTo-Json
+
+# Get specific post detail
+Invoke-RestMethod "http://localhost:3000/api/posts/[post-id]"
+
+# Get comments for a post
+Invoke-RestMethod "http://localhost:3000/api/posts/[post-id]/comments"
+```
+
+**Option 2: iwr (Invoke-WebRequest alias)** + Select-Object
+
+```powershell
+# Get posts and show content
+iwr "http://localhost:3000/api/posts?limit=5" | Select-Object -ExpandProperty Content
+
+# Get with authorization header
+$headers = @{ Authorization = "Bearer YOUR_TOKEN" }
+iwr -Uri "http://localhost:3000/api/posts" -Headers $headers | Select-Object -ExpandProperty Content
+```
+
+**Option 3: Use npm scripts** (easiest - see below)
+
+```bash
+npm run api:posts
+npm run api:post-detail
+npm run api:comments
+```
+
+### PowerShell API Test Commands
+
+```powershell
+# Health check
+Invoke-RestMethod "http://localhost:3000/api/health"
+
+# List posts (newest, limit 5)
+Invoke-RestMethod "http://localhost:3000/api/posts?limit=5&sort=new"
+
+# List posts sorted by Hot
+Invoke-RestMethod "http://localhost:3000/api/posts?limit=5&sort=hot"
+
+# List posts sorted by Top
+Invoke-RestMethod "http://localhost:3000/api/posts?limit=5&sort=top"
+
+# Search posts
+Invoke-RestMethod "http://localhost:3000/api/posts?search=mental+health&limit=5"
+
+# Filter by category
+Invoke-RestMethod "http://localhost:3000/api/posts?categoryId=category-uuid&limit=5"
+
+# Get specific post
+Invoke-RestMethod "http://localhost:3000/api/posts/[post-id]"
+
+# Get comments for post
+Invoke-RestMethod "http://localhost:3000/api/posts/[post-id]/comments"
+
+# Check session (if logged in)
+$response = iwr -Uri "http://localhost:3000/api/auth/session" -UseBasicParsing
+$response.Content | ConvertFrom-Json
+```
+
+### Bash/Unix: Traditional curl Commands
+
+If using **Git Bash** or **WSL** on Windows:
+
+```bash
+# These commands work as expected in Bash/WSL
+
+# Health check
+curl http://localhost:3000/api/health
+
+# List posts
+curl "http://localhost:3000/api/posts?limit=5&sort=new"
+
+# Get specific post
+curl http://localhost:3000/api/posts/[post-id]
+
+# Get comments
+curl http://localhost:3000/api/posts/[post-id]/comments
+
+# Pretty print JSON
+curl http://localhost:3000/api/posts?limit=5 | jq
 ```
 
 ---

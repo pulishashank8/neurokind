@@ -18,6 +18,7 @@ interface Post {
   title: string;
   snippet: string;
   createdAt: string;
+  status?: "ACTIVE" | "REMOVED" | "LOCKED" | "ARCHIVED";
   category: { id: string; name: string; slug: string };
   tags: Array<{ id: string; name: string; slug: string }>;
   author: { id: string; username: string; avatarUrl: string | null };

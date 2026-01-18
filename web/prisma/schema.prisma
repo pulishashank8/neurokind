@@ -151,6 +151,7 @@ model User {
   reports               Report[]         @relation("ReporterUser")
   moderationActions     ModerationAction[] @relation("ModeratorUser")
   moderationTargets     ModerationAction[] @relation("TargetUser")
+  modActionLogs         ModActionLog[]   @relation("ModActionLogModerator")
   providerReviews       ProviderReview[]
   claimedProviders      Provider[]
   aiConversations       AIConversation[]
@@ -390,6 +391,26 @@ model ModerationAction {
   @@index([postId])
   @@index([commentId])
   @@index([action])
+  @@index([createdAt])
+}
+
+model ModActionLog {
+  id                    String     @id @default(cuid())
+  actionType            ModerationActionType
+  targetType            ReportTargetType
+  targetId              String
+  targetTitle           String?    @db.VarChar(255)
+  moderatorId           String
+  reason                String?    @db.VarChar(255)
+  notes                 String?    @db.Text
+  createdAt             DateTime   @default(now())
+
+  moderator             User       @relation("ModActionLogModerator", fields: [moderatorId], references: [id], onDelete: Cascade)
+
+  @@index([moderatorId])
+  @@index([actionType])
+  @@index([targetType])
+  @@index([targetId])
   @@index([createdAt])
 }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/Button";
 import { VoteButtons } from "@/components/community/VoteButtons";
@@ -18,6 +19,7 @@ interface Post {
   title: string;
   content: string;
   createdAt: string;
+  status?: "ACTIVE" | "REMOVED" | "LOCKED" | "ARCHIVED";
   category: {
     id: string;
     name: string;
@@ -58,6 +60,7 @@ export default function PostDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const [postId, setPostId] = useState<string>("");
+  const { data: session } = useSession();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -113,12 +116,24 @@ export default function PostDetailPage({
         ) : post ? (
           <>
             <div className="bg-[var(--bg-surface)] rounded-[var(--radius-lg)] border border-[var(--border-light)] p-6 sm:p-8 mt-6">
-              {/* Header */}
-              {post.isPinned && (
-                <div className="mb-4 inline-flex items-center gap-1 px-3 py-1 bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-semibold rounded-full">
-                  📌 Pinned
-                </div>
-              )}
+              {/* Status & Pinned indicators */}
+              <div className="mb-4 flex flex-wrap gap-2">
+                {post.status === "REMOVED" && (
+                  <div className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full">
+                    🚫 Removed by moderators
+                  </div>
+                )}
+                {post.isPinned && (
+                  <div className="inline-flex items-center gap-1 px-3 py-1 bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-semibold rounded-full">
+                    📌 Pinned
+                  </div>
+                )}
+                {post.isLocked && (
+                  <div className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full">
+                    🔒 Locked
+                  </div>
+                )}
+              </div>
 
               <div className="flex items-start gap-3 sm:gap-4 mb-4">
                 <img
@@ -133,11 +148,6 @@ export default function PostDetailPage({
                   <p className="text-xs sm:text-sm text-[var(--text-muted)]">
                     {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                   </p>
-                  {post.isLocked && (
-                    <p className="text-xs text-[var(--danger)] font-medium mt-1">
-                      🔒 Post locked
-                    </p>
-                  )}
                 </div>
               </div>
 
@@ -194,16 +204,37 @@ export default function PostDetailPage({
               </div>
             </div>
 
-            {/* Comment Composer */}
-            {!post.isLocked && (
+            {post.isLocked ? (
+              <div className="bg-[var(--bg-surface)] rounded-[var(--radius-lg)] border border-[var(--border-light)] p-6 sm:p-8 mt-6">
+                <p className="text-center text-[var(--text-muted)]">
+                  🔒 This post is locked. New comments are disabled.
+                </p>
+              </div>
+            ) : !session ? (
               <div className="bg-[var(--bg-surface)] rounded-[var(--radius-lg)] border border-[var(--border-light)] p-6 sm:p-8 mt-6">
                 <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-4">
-                  Share your thoughts
+                  Join the conversation
+                </h2>
+                <div className="bg-[var(--bg-elevated)] border border-[var(--border-light)] rounded-[var(--radius-md)] p-6 text-center">
+                  <p className="text-[var(--text-secondary)] mb-4">
+                    Sign in to join the conversation and share your thoughts.
+                  </p>
+                  <Link href="/login">
+                    <Button size="lg">
+                      Sign in to comment
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[var(--bg-surface)] rounded-[var(--radius-lg)] border border-[var(--border-light)] p-6 sm:p-8 mt-6">
+                <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-4">
+                  Join the conversation
                 </h2>
                 <CommentComposer
                   postId={post.id}
                   onSuccess={handleCommentSuccess}
-                  placeholder="Write a comment..."
+                  placeholder="What are your thoughts?"
                 />
               </div>
             )}

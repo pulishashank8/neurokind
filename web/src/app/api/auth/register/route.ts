@@ -2,9 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { RegisterSchemaWithConfirm } from "@/lib/validators";
 import bcryptjs from "bcryptjs";
+import {
+  RATE_LIMITERS,
+  getClientIp,
+  rateLimitResponse,
+} from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 3 registrations per hour per IP
+    const ip = getClientIp(request);
+    const canRegister = await RATE_LIMITERS.register.checkLimit(ip);
+
+    if (!canRegister) {
+      const retryAfter = await RATE_LIMITERS.register.getRetryAfter(ip);
+      return rateLimitResponse(retryAfter);
+    }
+
     const body = await request.json();
 
     // Validate input

@@ -1,31 +1,101 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { redis } from "@/lib/redis";
+import { getEnv, isRedisAvailable, isAIEnabled, isProduction } from "@/lib/env";
 
-export async function GET() {
+/**
+ * Enhanced health check endpoint for production monitoring
+ * Verifies:
+ * - Database connectivity
+ * - Redis availability (optional)
+ * - AI features availability (optional)
+ * - Environment configuration
+ * - Memory usage and uptime
+ *
+ * GET /api/health
+ * GET /api/health?detailed=true (includes timing)
+ */
+
+export async function GET(request: NextRequest) {
+  const detailed = request.nextUrl.searchParams.get("detailed") === "true";
   const result: any = {
-    app: "ok",
-    db: { status: "unknown" },
-    redis: { status: "unknown" },
     timestamp: new Date().toISOString(),
+    status: "healthy",
+    uptime: process.uptime(),
+    environment: isProduction() ? "production" : "development",
   };
 
-  // Check DB connectivity
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    result.db.status = "ok";
-  } catch (e: any) {
-    result.db = { status: "error", error: e?.message ?? String(e) };
-  }
+  const timings: Record<string, number> = {};
 
-  // Check Redis connectivity (optional)
   try {
-    const pong = await redis.ping();
-    result.redis.status = pong === "PONG" ? "ok" : "error";
-  } catch (e: any) {
-    result.redis = { status: "error", error: e?.message ?? String(e) };
-  }
+    // 1. Verify environment is configured
+    const env = getEnv();
+    result.config = { ready: true };
 
-  const statusCode = result.db.status === "ok" ? 200 : 500;
-  return NextResponse.json(result, { status: statusCode });
+    // 2. Check database connectivity
+    const dbStart = performance.now();
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      timings.database_ms = Math.round(performance.now() - dbStart);
+      result.database = "ok";
+    } catch (error) {
+      result.database = "error";
+      result.status = "degraded";
+      result.error = String(error);
+    }
+
+    // 3. Check Redis (optional)
+    if (isRedisAvailable()) {
+      try {
+        const redisStart = performance.now();
+        const { Redis } = await import("ioredis");
+        const client = new Redis(env.REDIS_URL!, {
+          lazyConnect: true,
+          maxRetriesPerRequest: 0,
+          enableOfflineQueue: false,
+        });
+        await client.ping();
+        await client.disconnect();
+        timings.redis_ms = Math.round(performance.now() - redisStart);
+        result.redis = "ok";
+      } catch (error) {
+        result.redis = "unavailable";
+        // Not critical; don't degrade status
+      }
+    } else {
+      result.redis = "not_configured";
+    }
+
+    // 4. Check AI features (optional)
+    result.aiFeatures = isAIEnabled() ? "enabled" : "disabled";
+
+    // 5. Memory usage
+    if (typeof process !== "undefined" && process.memoryUsage) {
+      const mem = process.memoryUsage();
+      result.memory = {
+        heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
+        heapTotalMB: Math.round(mem.heapTotal / 1024 / 1024),
+        externalMB: Math.round(mem.external / 1024 / 1024),
+      };
+    }
+
+    if (detailed) {
+      result.timings = timings;
+    }
+
+    const statusCode = result.status === "healthy" ? 200 : 503;
+    return NextResponse.json(result, { status: statusCode });
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+
+    return NextResponse.json(
+      {
+        timestamp: new Date().toISOString(),
+        status: "unhealthy",
+        error: errorMessage,
+        environment: isProduction() ? "production" : "development",
+      },
+      { status: 500 }
+    );
+  }
 }

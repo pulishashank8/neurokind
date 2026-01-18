@@ -1,11 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { canModerate } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { createReportSchema } from "@/lib/validations/community";
-import { rateLimit, RATE_LIMITS } from "@/lib/redis";
+import {
+  RATE_LIMITERS,
+  rateLimitResponse,
+} from "@/lib/rateLimit";
 
-// POST /api/reports - Create a report
+// GET /api/reports - List reports with optional status filter + pagination
+export async function GET(request: NextRequest) {
+  try {
+    const status = request.nextUrl.searchParams.get("status");
+    const skip = parseInt(request.nextUrl.searchParams.get("skip") || "0");
+    const take = Math.min(parseInt(request.nextUrl.searchParams.get("take") || "20"), 100);
+
+    const where: any = {};
+    if (status && ["OPEN", "UNDER_REVIEW", "RESOLVED", "DISMISSED"].includes(status)) {
+      where.status = status;
+    }
+
+    const [reports, total] = await Promise.all([
+      prisma.report.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        include: {
+          reporter: { select: { id: true, profile: { select: { username: true } } } },
+        },
+        skip,
+        take,
+      }),
+      prisma.report.count({ where }),
+    ]);
+
+    const formatted = reports.map((r) => ({
+      id: r.id,
+      reason: r.reason,
+      targetType: r.targetType,
+      targetId: r.targetId,
+      status: r.status,
+      createdAt: r.createdAt,
+      reporter: r.reporter
+        ? {
+            id: r.reporter.id,
+            username: (r.reporter.profile as any)?.username ?? null,
+          }
+        : null,
+    }));
+
+    return NextResponse.json({
+      reports: formatted,
+      pagination: {
+        skip,
+        take,
+        total,
+        hasMore: skip + take < total,
+      },
+    });
+  } catch (e) {
+    return NextResponse.json(
+      { error: "Failed to fetch reports" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/reports - Create a report with rate limiting + duplicate prevention
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -13,15 +74,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check rate limit
-    const rateLimitKey = `ratelimit:report:${session.user.id}`;
-    const { success, remaining, reset } = await rateLimit(rateLimitKey, RATE_LIMITS.REPORT);
-
-    if (!success) {
-      return NextResponse.json(
-        { error: "Too many reports. Please try again later.", remaining, reset },
-        { status: 429, headers: { "Retry-After": String(reset) } }
-      );
+    // Rate limit: 5 reports per minute per user
+    const canReport = await RATE_LIMITERS.report.checkLimit(session.user.id);
+    if (!canReport) {
+      const retryAfter = await RATE_LIMITERS.report.getRetryAfter(session.user.id);
+      return rateLimitResponse(retryAfter);
     }
 
     const body = await request.json();
@@ -51,7 +108,10 @@ export async function POST(request: NextRequest) {
         select: { id: true },
       });
       if (!comment) {
-        return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+        return NextResponse.json(
+          { error: "Comment not found" },
+          { status: 404 }
+        );
       }
     } else if (targetType === "USER") {
       const user = await prisma.user.findUnique({
@@ -63,19 +123,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if user already reported this target
+    // Duplicate prevention: Check if user already reported this target within 24h
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const existingReport = await prisma.report.findFirst({
       where: {
         reporterId: session.user.id,
         targetType,
         targetId,
+        createdAt: { gte: twentyFourHoursAgo },
         status: { in: ["OPEN", "UNDER_REVIEW"] },
       },
     });
 
     if (existingReport) {
       return NextResponse.json(
-        { error: "You have already reported this content" },
+        {
+          error: "You have already reported this content in the last 24 hours",
+        },
         { status: 400 }
       );
     }
@@ -101,10 +165,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Report submitted successfully. Our team will review it shortly.",
+        message:
+          "Report submitted successfully. Our team will review it shortly.",
         report,
       },
-      { status: 201, headers: { "X-RateLimit-Remaining": String(remaining) } }
+      { status: 201 }
     );
   } catch (error) {
     console.error("Error creating report:", error);

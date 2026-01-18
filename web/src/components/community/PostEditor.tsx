@@ -187,7 +187,7 @@ export function PostEditor({
           <p className="text-xs text-[var(--danger)] mt-1">{errors.content.message}</p>
         )}
         <p className="text-xs text-[var(--text-muted)] mt-2">
-          {content.length} / 50,000 characters
+          {content?.length || 0} / 50,000 characters
         </p>
       </div>
 

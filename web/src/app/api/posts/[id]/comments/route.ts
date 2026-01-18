@@ -6,6 +6,10 @@ import { createCommentSchema } from "@/lib/validations/community";
 import { canModerate } from "@/lib/rbac";
 import DOMPurify from "isomorphic-dompurify";
 import { rateLimit, RATE_LIMITS, invalidateCache } from "@/lib/redis";
+import {
+  RATE_LIMITERS,
+  rateLimitResponse,
+} from "@/lib/rateLimit";
 
 // GET /api/posts/[id]/comments - Get threaded comments
 export async function GET(
@@ -124,16 +128,18 @@ export async function POST(
         { status: 400 }
       );
     }
-    // Check rate limit
-    const rateLimitKey = `ratelimit:comment:${session.user.id}`;
-    const { success, remaining, reset } = await rateLimit(rateLimitKey, RATE_LIMITS.CREATE_COMMENT);
 
-    if (!success) {
-      return NextResponse.json(
-        { error: "Too many comments. Please try again later.", remaining, reset },
-        { status: 429, headers: { "Retry-After": String(reset) } }
+    // Rate limit: 10 comments per minute per user
+    const canComment = await RATE_LIMITERS.createComment.checkLimit(
+      session.user.id
+    );
+    if (!canComment) {
+      const retryAfter = await RATE_LIMITERS.createComment.getRetryAfter(
+        session.user.id
       );
+      return rateLimitResponse(retryAfter);
     }
+
     const { content, parentCommentId, isAnonymous } = validation.data;
 
     // Check if post exists and is not locked
@@ -236,7 +242,7 @@ export async function POST(
     // Invalidate post comments cache
     await invalidateCache(`comments:${id}:*`, { prefix: "posts" });
 
-    return NextResponse.json(formattedComment, { status: 201, headers: { "X-RateLimit-Remaining": String(remaining) } });
+    return NextResponse.json(formattedComment, { status: 201 });
   } catch (error) {
     console.error("Error creating comment:", error);
     return NextResponse.json(

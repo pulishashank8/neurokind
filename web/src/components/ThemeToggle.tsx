@@ -19,9 +19,9 @@ export function ThemeToggle() {
         hover:shadow-[var(--shadow-md)]
       "
       aria-label="Toggle theme"
-      title={`Switch to ${theme === "calm-ocean" ? "Space Night" : "Calm Ocean"} theme`}
+      title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
     >
-      {theme === "calm-ocean" ? (
+      {theme === "light" ? (
         <svg className="w-5 h-5 text-[var(--text-primary)]" fill="currentColor" viewBox="0 0 20 20">
           <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
         </svg>

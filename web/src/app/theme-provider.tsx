@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-type Theme = "calm-ocean" | "space-night";
+type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
@@ -12,41 +12,46 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("calm-ocean");
+  const [theme, setTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
-  // Initialize theme on mount
+  // Initialize theme on mount (client-side only)
   useEffect(() => {
-    setMounted(true);
-    
     // Check localStorage first
     const savedTheme = localStorage.getItem("neurokind-theme") as Theme | null;
     
-    if (savedTheme && (savedTheme === "calm-ocean" || savedTheme === "space-night")) {
-      setTheme(savedTheme);
-      document.documentElement.setAttribute("data-theme", savedTheme);
-    } else {
-      // Default to calm-ocean (sensory-friendly default)
-      setTheme("calm-ocean");
-      document.documentElement.setAttribute("data-theme", "calm-ocean");
-    }
+    // Check system preference
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    // Use saved theme, or fall back to system preference
+    const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
+    
+    setTheme(initialTheme);
+    applyTheme(initialTheme);
+    setMounted(true);
   }, []);
 
-  // Apply theme changes
-  useEffect(() => {
-    if (mounted) {
-      document.documentElement.setAttribute("data-theme", theme);
-      localStorage.setItem("neurokind-theme", theme);
+  const applyTheme = (newTheme: Theme) => {
+    const root = document.documentElement;
+    
+    if (newTheme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
     }
-  }, [theme, mounted]);
-
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "calm-ocean" ? "space-night" : "calm-ocean"));
+    
+    localStorage.setItem("neurokind-theme", newTheme);
   };
 
-  // Prevent flash of unstyled content
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    applyTheme(newTheme);
+  };
+
+  // Prevent hydration mismatch: don't render until client is ready
   if (!mounted) {
-    return <div style={{ visibility: "hidden" }}>{children}</div>;
+    return <>{children}</>;
   }
 
   return (
@@ -57,9 +62,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+  try {
+    const context = useContext(ThemeContext);
+    if (!context) {
+      // Return default context if not available (during SSR/build)
+      return {
+        theme: "light" as Theme,
+        toggleTheme: () => {},
+      };
+    }
+    return context;
+  } catch (error) {
+    // Return default during SSR
+    return {
+      theme: "light" as Theme,
+      toggleTheme: () => {},
+    };
   }
-  return context;
 }

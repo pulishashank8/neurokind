@@ -40,7 +40,7 @@ export function CommentComposer({
     mode: "onChange",
   });
 
-  const content = watch("content");
+  const content = watch("content") ?? "";
 
   const onSubmit = async (data: CreateCommentInput) => {
     setIsSubmitting(true);

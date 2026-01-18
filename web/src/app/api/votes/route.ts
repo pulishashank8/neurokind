@@ -4,6 +4,10 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { createVoteSchema } from "@/lib/validations/community";
 import { rateLimit, RATE_LIMITS, invalidateCache } from "@/lib/redis";
+import {
+  RATE_LIMITERS,
+  rateLimitResponse,
+} from "@/lib/rateLimit";
 
 // POST /api/votes - Create/update/remove vote
 export async function POST(request: NextRequest) {
@@ -13,15 +17,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check rate limit
-    const rateLimitKey = `ratelimit:vote:${session.user.id}`;
-    const { success, remaining, reset } = await rateLimit(rateLimitKey, RATE_LIMITS.VOTE);
-
-    if (!success) {
-      return NextResponse.json(
-        { error: "Too many votes. Please try again later.", remaining, reset },
-        { status: 429, headers: { "Retry-After": String(reset) } }
+    // Rate limit: 60 votes per minute per user
+    const canVote = await RATE_LIMITERS.vote.checkLimit(session.user.id);
+    if (!canVote) {
+      const retryAfter = await RATE_LIMITERS.vote.getRetryAfter(
+        session.user.id
       );
+      return rateLimitResponse(retryAfter);
     }
 
     const body = await request.json();
@@ -150,7 +152,7 @@ export async function POST(request: NextRequest) {
       success: true,
       voteScore: updatedVoteScore,
       userVote: value,
-    }, { headers: { "X-RateLimit-Remaining": String(remaining) } });
+    });
   } catch (error) {
     console.error("Error processing vote:", error);
     return NextResponse.json(

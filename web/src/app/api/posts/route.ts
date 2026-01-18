@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { createPostSchema, getPostsSchema } from "@/lib/validations/community";
 import DOMPurify from "isomorphic-dompurify";
 import { getCached, setCached, invalidateCache, rateLimit, RATE_LIMITS, CACHE_TTL, cacheKey } from "@/lib/redis";
+import {
+  RATE_LIMITERS,
+  rateLimitResponse,
+} from "@/lib/rateLimit";
 
 // Reddit-style Hot algorithm: time-decayed score based on votes
 function calculateHotScore(voteScore: number, createdAt: Date): number {
@@ -233,15 +237,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check rate limit
-    const rateLimitKey = `ratelimit:post:${session.user.id}`;
-    const { success, remaining, reset } = await rateLimit(rateLimitKey, RATE_LIMITS.CREATE_POST);
-
-    if (!success) {
-      return NextResponse.json(
-        { error: "Too many posts. Please try again later.", remaining, reset },
-        { status: 429, headers: { "Retry-After": String(reset) } }
-      );
+    // Rate limit: 5 posts per minute per user
+    const canCreatePost = await RATE_LIMITERS.createPost.checkLimit(session.user.id);
+    if (!canCreatePost) {
+      const retryAfter = await RATE_LIMITERS.createPost.getRetryAfter(session.user.id);
+      return rateLimitResponse(retryAfter);
     }
 
     const body = await request.json();
@@ -255,6 +255,37 @@ export async function POST(request: NextRequest) {
     }
 
     const { title, content, categoryId, tags, isAnonymous } = validation.data;
+
+    // ===== ANTI-SPAM CHECKS =====
+    
+    // Check for excessive links (max 2 links per post)
+    const linkRegex = /https?:\/\/[^\s]+/gi;
+    const linkMatches = content.match(linkRegex) || [];
+    if (linkMatches.length > 2) {
+      return NextResponse.json(
+        { error: "Too many links. Maximum 2 links per post allowed." },
+        { status: 400 }
+      );
+    }
+    
+    // Check for duplicate posts from same author in last 5 minutes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const recentPost = await prisma.post.findFirst({
+      where: {
+        authorId: session.user.id,
+        title: title,
+        createdAt: {
+          gte: fiveMinutesAgo,
+        },
+      },
+    });
+    
+    if (recentPost) {
+      return NextResponse.json(
+        { error: "Duplicate post detected. Please wait before posting similar content." },
+        { status: 400 }
+      );
+    }
 
     // Sanitize content to prevent XSS
     const sanitizedContent = DOMPurify.sanitize(content, {
@@ -304,7 +335,7 @@ export async function POST(request: NextRequest) {
     // Invalidate feed cache
     await invalidateCache("posts:*", { prefix: "posts" });
 
-    return NextResponse.json(post, { status: 201, headers: { "X-RateLimit-Remaining": String(remaining) } });
+    return NextResponse.json(post, { status: 201 });
   } catch (error) {
     console.error("Error creating post:", error);
     return NextResponse.json(

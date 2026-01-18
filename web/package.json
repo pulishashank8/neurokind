@@ -13,7 +13,12 @@
     "db:studio": "prisma studio",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:migrate:status": "prisma migrate status",
-    "prisma:migrate:reset": "prisma migrate reset --force"
+    "prisma:migrate:reset": "prisma migrate reset --force",
+    "api:health": "pwsh -Command \"Invoke-RestMethod 'http://localhost:3000/api/health'\"",
+    "api:posts": "pwsh -Command \"Invoke-RestMethod 'http://localhost:3000/api/posts?limit=5&sort=new' | ConvertTo-Json\"",
+    "api:post-detail": "pwsh -Command \"Write-Host 'Usage: npm run api:post-detail -- [post-id]' ; Invoke-RestMethod \\\"http://localhost:3000/api/posts/your-post-id\\\"\"",
+    "api:comments": "pwsh -Command \"Write-Host 'Usage: npm run api:comments -- [post-id]' ; Invoke-RestMethod \\\"http://localhost:3000/api/posts/your-post-id/comments\\\"\"",
+    "test:windows": "pwsh -Command \"Write-Host 'Testing NeuroKind API on Windows...' ; Write-Host '✓ Health:' ; Invoke-RestMethod 'http://localhost:3000/api/health' | ConvertTo-Json ; Write-Host '✓ Posts:' ; Invoke-RestMethod 'http://localhost:3000/api/posts?limit=1&sort=new' | ConvertTo-Json\""
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -22,6 +27,7 @@
     "@tanstack/react-query": "^5.90.18",
     "@types/dompurify": "^3.0.5",
     "@types/ioredis": "^4.28.10",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
     "dompurify": "^3.3.1",
@@ -40,6 +46,7 @@
   "devDependencies": {
     "@prisma/engines": "^7.2.0",
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
