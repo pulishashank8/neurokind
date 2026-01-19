@@ -2,15 +2,38 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isProduction } from "./src/lib/env";
 import { getToken } from "next-auth/jwt";
+import { logger } from "./src/lib/logger";
+
+/**
+ * Generate a unique request ID
+ */
+function generateRequestId(): string {
+  return `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
 
 /**
  * Security headers and authentication middleware
  * Adds HSTS, CSP, X-Frame-Options, X-Content-Type-Options, etc.
+ * Also adds request correlation IDs and timing logs
  * Applied to all routes except static assets
  */
 
 export async function middleware(request: NextRequest) {
+  const startTime = Date.now();
   const { pathname } = request.nextUrl;
+  
+  // Generate or use existing request ID
+  const requestId = request.headers.get('x-request-id') || generateRequestId();
+  
+  // Create request-specific logger
+  const requestLogger = logger.child({ requestId });
+  
+  // Log incoming request
+  requestLogger.info({
+    method: request.method,
+    pathname,
+    userAgent: request.headers.get('user-agent'),
+  }, 'Incoming request');
   
   // Public routes that don't require authentication
   const publicRoutes = [
@@ -42,18 +65,31 @@ export async function middleware(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET 
     });
     
-    console.log(`[Middleware] Path: ${pathname}, Has Token: ${!!token}`);
+    requestLogger.debug({ hasToken: !!token }, 'Auth check');
     
     // Redirect to login if not authenticated
     if (!token) {
-      console.log(`[Middleware] Redirecting ${pathname} to /login`);
+      requestLogger.warn('Unauthorized access attempt');
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(loginUrl);
+      
+      const response = NextResponse.redirect(loginUrl);
+      response.headers.set('x-request-id', requestId);
+      
+      const durationMs = Date.now() - startTime;
+      requestLogger.info({
+        statusCode: 302,
+        durationMs,
+      }, 'Request completed (redirect)');
+      
+      return response;
     }
   }
   
   const response = NextResponse.next();
+
+  // Add request ID to response headers
+  response.headers.set('x-request-id', requestId);
 
   // X-Frame-Options: Prevent clickjacking
   response.headers.set("X-Frame-Options", "DENY");
@@ -100,6 +136,13 @@ export async function middleware(request: NextRequest) {
       "max-age=31536000; includeSubDomains; preload"
     );
   }
+
+  // Log request completion
+  const durationMs = Date.now() - startTime;
+  requestLogger.info({
+    statusCode: response.status,
+    durationMs,
+  }, 'Request completed');
 
   return response;
 }

@@ -1,4 +1,5 @@
 import { getEnv, isRedisAvailable } from "./env";
+import { NextResponse } from "next/server";
 
 /**
  * Redis-based rate limiter with in-memory fallback for development
@@ -180,7 +181,7 @@ export class RateLimiter {
  * Pre-configured rate limiters for common endpoints
  */
 export const RATE_LIMITERS = {
-  register: new RateLimiter("register", 3, 3600), // 3/hour per IP
+  register: new RateLimiter("register", 5, 3600), // 5/hour per IP
   login: new RateLimiter("login", 10, 60), // 10/min per IP
   createPost: new RateLimiter("createPost", 5, 60), // 5/min per user
   createComment: new RateLimiter("createComment", 10, 60), // 10/min per user
@@ -219,17 +220,30 @@ export async function checkRateLimit(
  * Create rate limit error response
  */
 export function rateLimitResponse(retryAfterSeconds: number) {
-  return new Response(
-    JSON.stringify({
+  return NextResponse.json(
+    {
       error: "Rate limit exceeded",
       retryAfterSeconds,
-    }),
+    },
     {
       status: 429,
       headers: {
-        "Content-Type": "application/json",
         "Retry-After": String(retryAfterSeconds),
       },
     }
   );
+}
+
+/**
+ * Clear rate limit for a specific identifier (useful for development/testing)
+ */
+export async function clearRateLimit(limiterName: string, identifier: string): Promise<void> {
+  const key = `ratelimit:${limiterName}:${identifier}`;
+  const redis = await getRedisClient();
+  
+  if (redis) {
+    await redis.del(key);
+  } else {
+    inMemoryStore.delete(key);
+  }
 }

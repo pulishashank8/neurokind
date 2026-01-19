@@ -269,7 +269,7 @@ export default function ProvidersPage() {
 
         <ul className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {providers.map((provider, index) => (
-            <li key={`${provider.npiNumber}-${index}`} className="rounded-lg border p-4">
+            <li key={`${provider.npi}-${index}`} className="rounded-lg border p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <h2 className="text-base font-semibold">{provider.name}</h2>
@@ -287,7 +287,7 @@ export default function ProvidersPage() {
                   {provider.address}
                   {provider.city && `, ${provider.city}`}
                   {provider.state && ` ${provider.state}`}
-                  {provider.postalCode && ` ${provider.postalCode}`}
+                  {provider.zip && ` ${provider.zip}`}
                 </p>
                 {provider.phone && <p className="mt-1">📞 {provider.phone}</p>}
               </div>
