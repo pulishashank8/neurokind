@@ -1,13 +1,58 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { isProduction } from "./src/lib/env";
+import { getToken } from "next-auth/jwt";
 
 /**
- * Security headers middleware
+ * Security headers and authentication middleware
  * Adds HSTS, CSP, X-Frame-Options, X-Content-Type-Options, etc.
  * Applied to all routes except static assets
  */
 
-export function middleware() {
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    '/',
+    '/login',
+    '/register',
+    '/about',
+  ];
+  
+  // Public API routes (only auth-related)
+  const publicApiRoutes = [
+    '/api/auth',
+    '/api/health',
+  ];
+  
+  // Check if the current path is a public route
+  const isPublicRoute = publicRoutes.some(route => pathname === route);
+  
+  // Check if it's a public API route
+  const isPublicApiRoute = publicApiRoutes.some(route => 
+    pathname.startsWith(route)
+  );
+  
+  // Only check authentication for protected routes
+  if (!isPublicRoute && !isPublicApiRoute) {
+    // Check if user is authenticated
+    const token = await getToken({ 
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET 
+    });
+    
+    console.log(`[Middleware] Path: ${pathname}, Has Token: ${!!token}`);
+    
+    // Redirect to login if not authenticated
+    if (!token) {
+      console.log(`[Middleware] Redirecting ${pathname} to /login`);
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+  
   const response = NextResponse.next();
 
   // X-Frame-Options: Prevent clickjacking
@@ -66,9 +111,10 @@ export const config = {
      * Match all request paths except for:
      * - _next/static (static files)
      * - _next/image (image optimization files)
+     * - _next/data (data files)
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!_next/static|_next/image|_next/data|favicon.ico|public).*)",
   ],
 };

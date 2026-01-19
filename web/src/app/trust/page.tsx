@@ -264,7 +264,7 @@ export default function TrustPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="mb-6 text-3xl font-bold text-gray-900">Have Questions About Your Privacy?</h2>
           <p className="mb-8 text-gray-700">
-            We're committed to transparency. Contact our privacy team at <span className="font-semibold">privacy@neurokind.care</span>
+            We're committed to transparency. Contact our privacy team at <span className="font-semibold">pulishashank8@gmail.com</span>
           </p>
           <Link
             href="/about"

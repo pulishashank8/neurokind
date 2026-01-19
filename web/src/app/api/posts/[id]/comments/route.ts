@@ -6,7 +6,7 @@ import { createCommentSchema } from "@/lib/validations/community";
 import { canModerate } from "@/lib/rbac";
 import DOMPurify from "isomorphic-dompurify";
 import { invalidateCache } from "@/lib/redis";
-import { rateLimitResponse } from "@/lib/rateLimit";
+import { rateLimitResponse, RATE_LIMITERS } from "@/lib/rateLimit";
 
 function enforceSafeLinks(html: string): string {
   return html.replace(/<a\s+([^>]*?)>/gi, (match, attrs) => {

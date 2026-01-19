@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
@@ -39,6 +40,7 @@ interface Category {
 function CommunityPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const [showFiltersDrawer, setShowFiltersDrawer] = useState(false);
   const [sort, setSort] = useState<"new" | "top" | "hot">("new");
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
@@ -47,16 +49,17 @@ function CommunityPageContent() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [page, setPage] = useState(1);
 
-  // Fetch categories
+  // Fetch categories - MUST be called before any conditional returns
   const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
       const res = await fetch("/api/categories");
       return res.json();
     },
+    enabled: !!session, // Only fetch when authenticated
   });
 
-  // Fetch posts
+  // Fetch posts - MUST be called before any conditional returns
   const { data: postsData, isLoading, isError } = useQuery({
     queryKey: ["posts", page, sort, selectedCategory, searchQuery],
     queryFn: async () => {
@@ -70,6 +73,7 @@ function CommunityPageContent() {
       const res = await fetch(`/api/posts?${params}`);
       return res.json();
     },
+    enabled: !!session, // Only fetch when authenticated
   });
 
   // Update URL params
@@ -77,17 +81,41 @@ function CommunityPageContent() {
     const params = new URLSearchParams();
     if (selectedCategory) params.set("category", selectedCategory);
     if (searchQuery) params.set("search", searchQuery);
-    router.push(`?${params.toString()}`);
+    const newUrl = params.toString() ? `/community?${params}` : "/community";
+    router.replace(newUrl, { scroll: false });
   }, [selectedCategory, searchQuery, router]);
 
+  // Redirect to login if not authenticated - AFTER all hooks
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login?callbackUrl=/community");
+    }
+  }, [status, router]);
+
+  // ALL useCallback hooks MUST be before conditional returns
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setPage(1);
   }, []);
 
+  // Compute derived values
   const categories: Category[] = categoriesData?.categories || [];
   const posts: Post[] = postsData?.posts || [];
   const pagination = postsData?.pagination;
+
+  // Show loading while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!session) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] pt-16">

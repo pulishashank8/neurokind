@@ -11,7 +11,7 @@ type NavItem = { href: string; label: string };
 const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Home" },
   { href: "/community", label: "Community" },
-  { href: "/providers", label: "Find Providers" },
+  { href: "/providers", label: "Healthcare Providers" },
   { href: "/ai-support", label: "AI Support" },
   { href: "/screening", label: "Screening" },
   { href: "/resources", label: "Resources" },
