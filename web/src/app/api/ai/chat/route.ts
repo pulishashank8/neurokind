@@ -6,31 +6,40 @@ import {
   getClientIp,
   rateLimitResponse,
 } from "@/lib/rateLimit";
+import { withApiHandler, getRequestId } from "@/lib/apiHandler";
+import { createLogger } from "@/lib/logger";
+import { apiErrors } from "@/lib/apiError";
 
 interface ChatMessage {
   role: string;
   content: string;
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const POST = withApiHandler(async (req: NextRequest) => {
+  const requestId = getRequestId(req);
+  const logger = createLogger({ requestId });
+  
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    logger.warn('Unauthorized AI chat attempt');
+    throw apiErrors.unauthorized();
+  }
 
-    const identifier = session.user.id || getClientIp(req) || "unknown";
-    const canProceed = await RATE_LIMITERS.aiChat.checkLimit(identifier);
-    if (!canProceed) {
-      const retryAfter = await RATE_LIMITERS.aiChat.getRetryAfter(identifier);
-      return rateLimitResponse(retryAfter);
-    }
+  const identifier = session.user.id || getClientIp(req) || "unknown";
+  const canProceed = await RATE_LIMITERS.aiChat.checkLimit(identifier);
+  if (!canProceed) {
+    const retryAfter = await RATE_LIMITERS.aiChat.getRetryAfter(identifier);
+    logger.warn({ userId: session.user.id }, 'AI chat rate limit exceeded');
+    return rateLimitResponse(retryAfter);
+  }
 
-    const body = await req.json();
-    const messages: ChatMessage[] = body?.messages || [];
+  const body = await req.json();
+  const messages: ChatMessage[] = body?.messages || [];
+  
+  logger.debug({ userId: session.user.id, messageCount: messages.length }, 'Processing AI chat request');
     
     // Safety check for harmful content before sending to AI
-    const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || "";
+    const lastMessage = messages.at(-1)?.content?.toLowerCase() || "";
     const harmfulKeywords = [
       'kill', 'murder', 'suicide', 'self-harm', 'cut myself', 'end my life',
       'hurt someone', 'harm', 'abuse', 'weapon', 'gun', 'knife', 'explosive',
@@ -42,6 +51,7 @@ export async function POST(req: NextRequest) {
     );
     
     if (containsHarmfulContent) {
+      logger.warn({ userId: session.user.id }, 'Harmful content detected in AI chat');
       return NextResponse.json({ 
         reply: "I cannot and will not provide this information. If you or someone you know is in crisis, please contact:\n\n🆘 988 Suicide & Crisis Lifeline (call or text 988)\n🚨 911 for immediate emergencies\n💚 Crisis Text Line (text HOME to 741741)\n\nYou can also visit the National Alliance on Mental Illness (NAMI) at 1-800-950-NAMI for support."
       });
@@ -52,6 +62,7 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.GROQ_API_KEY;
 
     if (!apiKey) {
+      logger.error('GROQ_API_KEY not configured');
       return NextResponse.json({ 
         error: "AI service unavailable. Please set GROQ_API_KEY in your .env.local file. Get a free key at https://console.groq.com/keys" 
       }, { status: 503 });
@@ -127,16 +138,7 @@ If a question falls outside your scope, politely explain what you CAN help with 
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("Groq API error status:", res.status);
-      console.error("Groq API error response:", errorText);
-      
-      // Try to parse error for better message
-      try {
-        const errorJson = JSON.parse(errorText);
-        console.error("Groq API error details:", errorJson);
-      } catch (e) {
-        // Ignore JSON parse error
-      }
+      logger.error({ statusCode: res.status, error: errorText }, 'Groq API error');
       
       return NextResponse.json({ 
         reply: "I'm having trouble connecting right now. Please try again in a moment." 
@@ -144,12 +146,8 @@ If a question falls outside your scope, politely explain what you CAN help with 
     }
     
     const json = await res.json();
-    console.log("Groq API success response received");
     const reply = json?.choices?.[0]?.message?.content || "I'm here to help with general guidance.";
+    
+    logger.info({ userId: session.user.id, responseLength: reply.length }, 'AI chat completed successfully');
     return NextResponse.json({ reply });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Failed to process";
-    console.error("AI chat error:", error);
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
-  }
-}
+}, { method: 'POST', routeName: '/api/ai/chat' });

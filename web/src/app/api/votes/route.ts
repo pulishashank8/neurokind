@@ -8,35 +8,45 @@ import {
   RATE_LIMITERS,
   rateLimitResponse,
 } from "@/lib/rateLimit";
+import { withApiHandler, getRequestId } from "@/lib/apiHandler";
+import { createLogger } from "@/lib/logger";
+import { apiErrors } from "@/lib/apiError";
 
 // POST /api/votes - Create/update/remove vote
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const POST = withApiHandler(async (request: NextRequest) => {
+  const requestId = getRequestId(request);
+  const logger = createLogger({ requestId });
+  
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    logger.warn('Unauthorized vote attempt');
+    throw apiErrors.unauthorized();
+  }
 
-    // Rate limit: 60 votes per minute per user
-    const canVote = await RATE_LIMITERS.vote.checkLimit(session.user.id);
-    if (!canVote) {
-      const retryAfter = await RATE_LIMITERS.vote.getRetryAfter(
-        session.user.id
-      );
-      return rateLimitResponse(retryAfter);
-    }
+  // Rate limit: 60 votes per minute per user
+  const canVote = await RATE_LIMITERS.vote.checkLimit(session.user.id);
+  if (!canVote) {
+    const retryAfter = await RATE_LIMITERS.vote.getRetryAfter(
+      session.user.id
+    );
+    logger.warn({ userId: session.user.id }, 'Vote rate limit exceeded');
+    return rateLimitResponse(retryAfter);
+  }
 
-    const body = await request.json();
-    const validation = createVoteSchema.safeParse(body);
+  const body = await request.json();
+  const validation = createVoteSchema.safeParse(body);
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: "Invalid input", details: validation.error.errors },
-        { status: 400 }
-      );
-    }
+  if (!validation.success) {
+    logger.warn({ validationErrors: validation.error.errors }, 'Invalid vote data');
+    return NextResponse.json(
+      { error: "Invalid input", details: validation.error.errors },
+      { status: 400 }
+    );
+  }
 
-    const { targetType, targetId, value } = validation.data;
+  const { targetType, targetId, value } = validation.data;
+  
+  logger.debug({ userId: session.user.id, targetType, targetId, value }, 'Processing vote');
 
     // Verify target exists
     if (targetType === "POST") {
@@ -148,16 +158,17 @@ export async function POST(request: NextRequest) {
       await invalidateCache("posts:*", { prefix: "posts" });
     }
 
+    logger.info({ 
+      userId: session.user.id, 
+      targetType, 
+      targetId, 
+      value, 
+      voteScore: updatedVoteScore 
+    }, 'Vote processed successfully');
+    
     return NextResponse.json({
       success: true,
       voteScore: updatedVoteScore,
       userVote: value,
     });
-  } catch (error) {
-    console.error("Error processing vote:", error);
-    return NextResponse.json(
-      { error: "Failed to process vote" },
-      { status: 500 }
-    );
-  }
-}
+}, { method: 'POST', routeName: '/api/votes' });

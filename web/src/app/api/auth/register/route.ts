@@ -7,33 +7,39 @@ import {
   getClientIp,
   rateLimitResponse,
 } from "@/lib/rateLimit";
+import { withApiHandler, getRequestId } from "@/lib/apiHandler";
+import { createLogger } from "@/lib/logger";
 
-export async function POST(request: NextRequest) {
-  try {
-    // Rate limit: 3 registrations per hour per IP
-    const ip = getClientIp(request);
-    const canRegister = await RATE_LIMITERS.register.checkLimit(ip);
+export const POST = withApiHandler(async (request: NextRequest) => {
+  const requestId = getRequestId(request);
+  const logger = createLogger({ requestId });
+  
+  const body = await request.json();
 
-    if (!canRegister) {
-      const retryAfter = await RATE_LIMITERS.register.getRetryAfter(ip);
-      return rateLimitResponse(retryAfter);
-    }
+  // Validate input first (don't count invalid requests against rate limit)
+  const parsed = RegisterSchemaWithConfirm.safeParse(body);
+  if (!parsed.success) {
+    logger.warn({ validationErrors: parsed.error.errors }, 'Registration validation failed');
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        details: parsed.error.errors,
+      },
+      { status: 400 }
+    );
+  }
 
-    const body = await request.json();
+  const { email, password, username, displayName } = parsed.data;
+  
+  // Rate limit: 5 registrations per hour per IP (after validation passes)
+  const ip = getClientIp(request);
+  const canRegister = await RATE_LIMITERS.register.checkLimit(ip);
 
-    // Validate input
-    const parsed = RegisterSchemaWithConfirm.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: "Validation failed",
-          details: parsed.error.errors,
-        },
-        { status: 400 }
-      );
-    }
-
-    const { email, password, username, displayName } = parsed.data;
+  if (!canRegister) {
+    const retryAfter = await RATE_LIMITERS.register.getRetryAfter(ip);
+    logger.warn({ ip }, 'Registration rate limit exceeded');
+    return rateLimitResponse(retryAfter);
+  }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -41,6 +47,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUser) {
+      logger.warn({ email: email.substring(0, 3) + '***' }, 'Registration attempt with existing email');
       return NextResponse.json(
         { error: "User already exists with this email" },
         { status: 409 }
@@ -53,6 +60,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUsername) {
+      logger.warn({ username }, 'Registration attempt with existing username');
       return NextResponse.json(
         { error: "Username already taken" },
         { status: 409 }
@@ -86,6 +94,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    logger.info({ userId: user.id, username }, 'User registered successfully');
     return NextResponse.json(
       {
         message: "User registered successfully",
@@ -98,11 +107,4 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Registration error:", error);
-    return NextResponse.json(
-      { error: "Registration failed" },
-      { status: 500 }
-    );
-  }
-}
+}, { method: 'POST', routeName: '/api/auth/register' });

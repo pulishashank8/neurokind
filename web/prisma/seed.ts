@@ -528,6 +528,333 @@ What strategies have worked for your family? Would love to hear what you've trie
 
     console.log(`✅ Created sample bookmark`);
 
+    // ============================================================================
+    // CREATE DATA CATALOG OWNERS
+    // ============================================================================
+    console.log('👥 Creating data owners...');
+
+    const dataOwners = await Promise.all([
+      prisma.dataOwner.upsert({
+        where: { teamName: 'Engineering' },
+        update: {},
+        create: {
+          teamName: 'Engineering',
+          contactEmail: 'engineering@neurokind.internal',
+          slackChannel: 'eng-data',
+        },
+      }),
+      prisma.dataOwner.upsert({
+        where: { teamName: 'Product' },
+        update: {},
+        create: {
+          teamName: 'Product',
+          contactEmail: 'product@neurokind.internal',
+          slackChannel: 'product',
+        },
+      }),
+      prisma.dataOwner.upsert({
+        where: { teamName: 'Clinical' },
+        update: {},
+        create: {
+          teamName: 'Clinical',
+          contactEmail: 'clinical@neurokind.internal',
+          slackChannel: 'clinical',
+        },
+      }),
+      prisma.dataOwner.upsert({
+        where: { teamName: 'Compliance' },
+        update: {},
+        create: {
+          teamName: 'Compliance',
+          contactEmail: 'compliance@neurokind.internal',
+          slackChannel: 'compliance',
+        },
+      }),
+    ]);
+
+    console.log(`✅ Created ${dataOwners.length} data owners`);
+
+    // ============================================================================
+    // CREATE GLOSSARY TERMS
+    // ============================================================================
+    console.log('📖 Creating glossary terms...');
+
+    const glossaryTerms = await Promise.all([
+      prisma.businessGlossaryTerm.upsert({
+        where: { name: 'PII' },
+        update: {},
+        create: {
+          name: 'PII',
+          definition: 'Personally Identifiable Information - any data that can be used to identify a specific individual',
+          examples: 'Email addresses, phone numbers, IP addresses, user IDs when linked to personal data',
+        },
+      }),
+      prisma.businessGlossaryTerm.upsert({
+        where: { name: 'PHI' },
+        update: {},
+        create: {
+          name: 'PHI',
+          definition: 'Protected Health Information - health information that can be linked to an individual, protected under HIPAA',
+          examples: 'Medical diagnoses, treatment plans, screening results, therapy notes',
+        },
+      }),
+      prisma.businessGlossaryTerm.upsert({
+        where: { name: 'Data Retention' },
+        update: {},
+        create: {
+          name: 'Data Retention',
+          definition: 'Policy governing how long data must be kept and when it should be deleted',
+          examples: 'User data retained for 7 years post-account deletion, audit logs kept for 3 years',
+        },
+      }),
+      prisma.businessGlossaryTerm.upsert({
+        where: { name: 'Audit Trail' },
+        update: {},
+        create: {
+          name: 'Audit Trail',
+          definition: 'Chronological record of system activities to enable reconstruction and review',
+          examples: 'User login events, data modification records, access logs',
+        },
+      }),
+      prisma.businessGlossaryTerm.upsert({
+        where: { name: 'Data Lineage' },
+        update: {},
+        create: {
+          name: 'Data Lineage',
+          definition: 'Documentation of data origins, movements, transformations, and dependencies',
+          examples: 'Tracking how user input flows through screening to reporting',
+        },
+      }),
+      prisma.businessGlossaryTerm.upsert({
+        where: { name: 'Consent' },
+        update: {},
+        create: {
+          name: 'Consent',
+          definition: 'User permission for data collection, processing, and sharing',
+          examples: 'Terms acceptance, privacy policy consent, research participation opt-in',
+        },
+      }),
+    ]);
+
+    console.log(`✅ Created ${glossaryTerms.length} glossary terms`);
+
+    // ============================================================================
+    // CREATE CATALOG DATASETS
+    // ============================================================================
+    console.log('📊 Creating catalog datasets...');
+
+    // User Dataset
+    const userDataset = await prisma.dataset.upsert({
+      where: { name: 'User' },
+      update: {},
+      create: {
+        name: 'User',
+        description: 'Core user authentication and identity data for all platform users',
+        domain: 'auth',
+        ownerTeam: 'Engineering',
+        sensitivity: 'PII',
+        tags: ['authentication', 'identity', 'core'],
+      },
+    });
+
+    await prisma.datasetField.createMany({
+      data: [
+        { datasetId: userDataset.id, name: 'id', type: 'String (CUID)', description: 'Unique user identifier', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: userDataset.id, name: 'email', type: 'String', description: 'User email address for authentication', isNullable: false, sensitivity: 'PII', examples: 'user@example.com' },
+        { datasetId: userDataset.id, name: 'hashedPassword', type: 'String', description: 'Bcrypt hashed password', isNullable: true, sensitivity: 'SENSITIVE' },
+        { datasetId: userDataset.id, name: 'createdAt', type: 'DateTime', description: 'Account creation timestamp', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: userDataset.id, name: 'updatedAt', type: 'DateTime', description: 'Last account update timestamp', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: userDataset.id, name: 'lastLoginAt', type: 'DateTime', description: 'Most recent login timestamp', isNullable: true, sensitivity: 'INTERNAL' },
+      ],
+      skipDuplicates: true,
+    });
+
+    // Profile Dataset
+    const profileDataset = await prisma.dataset.upsert({
+      where: { name: 'Profile' },
+      update: {},
+      create: {
+        name: 'Profile',
+        description: 'Extended user profile information including display settings and verification status',
+        domain: 'auth',
+        ownerTeam: 'Product',
+        sensitivity: 'PII',
+        tags: ['profile', 'user-data', 'identity'],
+      },
+    });
+
+    await prisma.datasetField.createMany({
+      data: [
+        { datasetId: profileDataset.id, name: 'id', type: 'String (CUID)', description: 'Profile identifier', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: profileDataset.id, name: 'userId', type: 'String (FK)', description: 'Reference to user account', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: profileDataset.id, name: 'username', type: 'String', description: 'Public display username', isNullable: false, sensitivity: 'PII', examples: 'parent_alex, therapist_sam' },
+        { datasetId: profileDataset.id, name: 'displayName', type: 'String', description: 'Full display name', isNullable: false, sensitivity: 'PII', examples: 'Alex Parent' },
+        { datasetId: profileDataset.id, name: 'bio', type: 'Text', description: 'User biography or description', isNullable: true, sensitivity: 'INTERNAL' },
+        { datasetId: profileDataset.id, name: 'location', type: 'String', description: 'User location (city/region)', isNullable: true, sensitivity: 'PII', examples: 'San Francisco, CA' },
+        { datasetId: profileDataset.id, name: 'verifiedTherapist', type: 'Boolean', description: 'Professional therapist verification status', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: profileDataset.id, name: 'shadowbanned', type: 'Boolean', description: 'Moderation status flag', isNullable: false, sensitivity: 'SENSITIVE' },
+      ],
+      skipDuplicates: true,
+    });
+
+    // Post Dataset
+    const postDataset = await prisma.dataset.upsert({
+      where: { name: 'Post' },
+      update: {},
+      create: {
+        name: 'Post',
+        description: 'Community forum posts created by users seeking support or sharing experiences',
+        domain: 'community',
+        ownerTeam: 'Product',
+        sensitivity: 'SENSITIVE',
+        tags: ['community', 'content', 'ugc'],
+      },
+    });
+
+    await prisma.datasetField.createMany({
+      data: [
+        { datasetId: postDataset.id, name: 'id', type: 'String (CUID)', description: 'Post identifier', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: postDataset.id, name: 'title', type: 'String', description: 'Post title/headline', isNullable: false, sensitivity: 'SENSITIVE', examples: 'Need advice on meltdowns' },
+        { datasetId: postDataset.id, name: 'content', type: 'Text', description: 'Full post content (may contain personal stories)', isNullable: false, sensitivity: 'SENSITIVE' },
+        { datasetId: postDataset.id, name: 'authorId', type: 'String (FK)', description: 'Reference to post author', isNullable: true, sensitivity: 'INTERNAL' },
+        { datasetId: postDataset.id, name: 'isAnonymous', type: 'Boolean', description: 'Whether post is anonymous', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: postDataset.id, name: 'status', type: 'Enum (PostStatus)', description: 'Post moderation/visibility status', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: postDataset.id, name: 'viewCount', type: 'Integer', description: 'Number of views', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: postDataset.id, name: 'voteScore', type: 'Integer', description: 'Net upvotes minus downvotes', isNullable: false, sensitivity: 'INTERNAL' },
+      ],
+      skipDuplicates: true,
+    });
+
+    // Comment Dataset
+    const commentDataset = await prisma.dataset.upsert({
+      where: { name: 'Comment' },
+      update: {},
+      create: {
+        name: 'Comment',
+        description: 'User comments and replies on community posts',
+        domain: 'community',
+        ownerTeam: 'Product',
+        sensitivity: 'SENSITIVE',
+        tags: ['community', 'content', 'ugc'],
+      },
+    });
+
+    await prisma.datasetField.createMany({
+      data: [
+        { datasetId: commentDataset.id, name: 'id', type: 'String (CUID)', description: 'Comment identifier', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: commentDataset.id, name: 'content', type: 'Text', description: 'Comment text content', isNullable: false, sensitivity: 'SENSITIVE' },
+        { datasetId: commentDataset.id, name: 'authorId', type: 'String (FK)', description: 'Reference to comment author', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: commentDataset.id, name: 'postId', type: 'String (FK)', description: 'Reference to parent post', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: commentDataset.id, name: 'parentCommentId', type: 'String (FK)', description: 'Reference to parent comment (for nested replies)', isNullable: true, sensitivity: 'INTERNAL' },
+        { datasetId: commentDataset.id, name: 'status', type: 'Enum (CommentStatus)', description: 'Comment visibility status', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: commentDataset.id, name: 'isAnonymous', type: 'Boolean', description: 'Whether comment is anonymous', isNullable: false, sensitivity: 'INTERNAL' },
+      ],
+      skipDuplicates: true,
+    });
+
+    // AuditLog Dataset
+    const auditLogDataset = await prisma.dataset.upsert({
+      where: { name: 'AuditLog' },
+      update: {},
+      create: {
+        name: 'AuditLog',
+        description: 'System audit trail for security, compliance, and debugging',
+        domain: 'analytics',
+        ownerTeam: 'Engineering',
+        sensitivity: 'SENSITIVE',
+        tags: ['security', 'audit', 'compliance'],
+      },
+    });
+
+    await prisma.datasetField.createMany({
+      data: [
+        { datasetId: auditLogDataset.id, name: 'id', type: 'String (CUID)', description: 'Audit log entry identifier', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: auditLogDataset.id, name: 'userId', type: 'String (FK)', description: 'User who performed action', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: auditLogDataset.id, name: 'action', type: 'String', description: 'Action type performed', isNullable: false, sensitivity: 'INTERNAL', examples: 'user.login, post.create, user.delete' },
+        { datasetId: auditLogDataset.id, name: 'targetType', type: 'String', description: 'Type of entity affected', isNullable: true, sensitivity: 'INTERNAL', examples: 'POST, USER, COMMENT' },
+        { datasetId: auditLogDataset.id, name: 'targetId', type: 'String', description: 'ID of affected entity', isNullable: true, sensitivity: 'INTERNAL' },
+        { datasetId: auditLogDataset.id, name: 'ipAddress', type: 'String', description: 'Client IP address', isNullable: true, sensitivity: 'PII', examples: '192.168.1.1' },
+        { datasetId: auditLogDataset.id, name: 'userAgent', type: 'String', description: 'Client user agent string', isNullable: true, sensitivity: 'INTERNAL' },
+        { datasetId: auditLogDataset.id, name: 'changes', type: 'JSON', description: 'Before/after data changes', isNullable: true, sensitivity: 'SENSITIVE' },
+      ],
+      skipDuplicates: true,
+    });
+
+    // Provider Dataset
+    const providerDataset = await prisma.dataset.upsert({
+      where: { name: 'Provider' },
+      update: {},
+      create: {
+        name: 'Provider',
+        description: 'Healthcare and therapy provider directory listings',
+        domain: 'providers',
+        ownerTeam: 'Clinical',
+        sensitivity: 'PUBLIC',
+        tags: ['providers', 'directory', 'healthcare'],
+      },
+    });
+
+    await prisma.datasetField.createMany({
+      data: [
+        { datasetId: providerDataset.id, name: 'id', type: 'String (CUID)', description: 'Provider identifier', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: providerDataset.id, name: 'name', type: 'String', description: 'Provider or practice name', isNullable: false, sensitivity: 'PUBLIC', examples: 'ABC Therapy Center' },
+        { datasetId: providerDataset.id, name: 'phone', type: 'String', description: 'Contact phone number', isNullable: true, sensitivity: 'PUBLIC' },
+        { datasetId: providerDataset.id, name: 'address', type: 'Text', description: 'Physical address', isNullable: true, sensitivity: 'PUBLIC' },
+        { datasetId: providerDataset.id, name: 'email', type: 'String', description: 'Contact email', isNullable: true, sensitivity: 'PUBLIC' },
+        { datasetId: providerDataset.id, name: 'latitude', type: 'Float', description: 'GPS latitude for mapping', isNullable: true, sensitivity: 'PUBLIC' },
+        { datasetId: providerDataset.id, name: 'longitude', type: 'Float', description: 'GPS longitude for mapping', isNullable: true, sensitivity: 'PUBLIC' },
+        { datasetId: providerDataset.id, name: 'isVerified', type: 'Boolean', description: 'Verification status', isNullable: false, sensitivity: 'INTERNAL' },
+      ],
+      skipDuplicates: true,
+    });
+
+    // ModActionLog Dataset
+    const modActionDataset = await prisma.dataset.upsert({
+      where: { name: 'ModActionLog' },
+      update: {},
+      create: {
+        name: 'ModActionLog',
+        description: 'Moderation actions taken by moderators and admins',
+        domain: 'moderation',
+        ownerTeam: 'Compliance',
+        sensitivity: 'SENSITIVE',
+        tags: ['moderation', 'compliance', 'safety'],
+      },
+    });
+
+    await prisma.datasetField.createMany({
+      data: [
+        { datasetId: modActionDataset.id, name: 'id', type: 'String (CUID)', description: 'Action log identifier', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: modActionDataset.id, name: 'actionType', type: 'Enum (ModerationActionType)', description: 'Type of moderation action', isNullable: false, sensitivity: 'INTERNAL', examples: 'REMOVE, LOCK, SHADOWBAN' },
+        { datasetId: modActionDataset.id, name: 'targetType', type: 'Enum (ReportTargetType)', description: 'Type of content moderated', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: modActionDataset.id, name: 'targetId', type: 'String', description: 'ID of moderated content', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: modActionDataset.id, name: 'moderatorId', type: 'String (FK)', description: 'Moderator who took action', isNullable: false, sensitivity: 'INTERNAL' },
+        { datasetId: modActionDataset.id, name: 'reason', type: 'String', description: 'Reason for action', isNullable: true, sensitivity: 'SENSITIVE' },
+        { datasetId: modActionDataset.id, name: 'notes', type: 'Text', description: 'Additional moderator notes', isNullable: true, sensitivity: 'SENSITIVE' },
+      ],
+      skipDuplicates: true,
+    });
+
+    // Link datasets to glossary terms
+    const piiTerm = glossaryTerms.find(t => t.name === 'PII')!;
+    const phiTerm = glossaryTerms.find(t => t.name === 'PHI')!;
+    const auditTerm = glossaryTerms.find(t => t.name === 'Audit Trail')!;
+    const retentionTerm = glossaryTerms.find(t => t.name === 'Data Retention')!;
+
+    await prisma.datasetGlossaryTerm.createMany({
+      data: [
+        { datasetId: userDataset.id, termId: piiTerm.id },
+        { datasetId: userDataset.id, termId: retentionTerm.id },
+        { datasetId: profileDataset.id, termId: piiTerm.id },
+        { datasetId: auditLogDataset.id, termId: auditTerm.id },
+        { datasetId: auditLogDataset.id, termId: retentionTerm.id },
+        { datasetId: auditLogDataset.id, termId: piiTerm.id },
+      ],
+      skipDuplicates: true,
+    });
+
+    console.log(`✅ Created 7 datasets with fields and glossary term associations`);
+
     console.log('\n✨ Database seed completed successfully!');
     console.log('\n📊 Summary:');
     console.log(`   - ${categories.length} categories created`);
@@ -541,6 +868,9 @@ What strategies have worked for your family? Would love to hear what you've trie
     console.log('   - 2 sample comments created');
     console.log('   - 3 sample votes created');
     console.log('   - 1 sample bookmark created');
+    console.log(`   - ${dataOwners.length} data owners created`);
+    console.log(`   - ${glossaryTerms.length} glossary terms created`);
+    console.log('   - 7 catalog datasets created');
     console.log('\n💡 Test login credentials:');
     console.log('   Admin: admin@neurokind.local / admin123');
     console.log('   Moderator: moderator@neurokind.local / moderator123');

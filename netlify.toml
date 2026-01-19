@@ -1,0 +1,37 @@
+# Netlify Configuration for NeuroKind
+# Next.js App with Prisma and PostgreSQL
+
+[build]
+  command = "cd web && npm install && npx prisma generate && npm run build"
+  publish = "web/.next"
+  base = "/"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Next.js Runtime
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Redirect all requests to Next.js
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/___netlify-handler"
+  status = 200
+
+# Force HTTPS
+[[redirects]]
+  from = "http://neurokind.netlify.app/*"
+  to = "https://neurokind.netlify.app/:splat"
+  status = 301
+  force = true
+
+# Environment variable hints (set these in Netlify dashboard)
+# Required environment variables:
+# - DATABASE_URL (PostgreSQL connection string)
+# - NEXTAUTH_URL (https://your-app.netlify.app)
+# - NEXTAUTH_SECRET (generate with: openssl rand -base64 32)
+# - GOOGLE_CLIENT_ID (optional, for Google auth)
+# - GOOGLE_CLIENT_SECRET (optional, for Google auth)
+# - REDIS_URL (optional, for rate limiting)

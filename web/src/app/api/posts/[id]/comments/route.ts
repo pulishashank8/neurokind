@@ -7,6 +7,8 @@ import { canModerate } from "@/lib/rbac";
 import DOMPurify from "isomorphic-dompurify";
 import { invalidateCache } from "@/lib/redis";
 import { rateLimitResponse, RATE_LIMITERS } from "@/lib/rateLimit";
+import { createLogger } from "@/lib/logger";
+import { getRequestId } from "@/lib/apiHandler";
 
 function enforceSafeLinks(html: string): string {
   return html.replace(/<a\s+([^>]*?)>/gi, (match, attrs) => {

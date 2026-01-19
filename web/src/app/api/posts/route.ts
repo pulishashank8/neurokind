@@ -6,6 +6,9 @@ import { createPostSchema, getPostsSchema } from "@/lib/validations/community";
 import DOMPurify from "isomorphic-dompurify";
 import { getCached, setCached, invalidateCache, CACHE_TTL, cacheKey } from "@/lib/redis";
 import { rateLimitResponse, RATE_LIMITERS } from "@/lib/rateLimit";
+import { withApiHandler, getRequestId } from "@/lib/apiHandler";
+import { createLogger } from "@/lib/logger";
+import { apiErrors } from "@/lib/apiError";
 
 // Reddit-style Hot algorithm: time-decayed score based on votes
 function calculateHotScore(voteScore: number, createdAt: Date): number {
@@ -25,36 +28,42 @@ function enforceSafeLinks(html: string): string {
 }
 
 // GET /api/posts - List posts with cursor pagination
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = Object.fromEntries(request.nextUrl.searchParams);
-    const validation = getPostsSchema.safeParse(searchParams);
+export const GET = withApiHandler(async (request: NextRequest) => {
+  const requestId = getRequestId(request);
+  const logger = createLogger({ requestId });
+  
+  const searchParams = Object.fromEntries(request.nextUrl.searchParams);
+  const validation = getPostsSchema.safeParse(searchParams);
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: "Invalid query parameters", details: validation.error.errors },
-        { status: 400 }
-      );
-    }
+  if (!validation.success) {
+    logger.warn({ validationErrors: validation.error.errors }, 'Invalid query parameters');
+    return NextResponse.json(
+      { error: "Invalid query parameters", details: validation.error.errors },
+      { status: 400 }
+    );
+  }
 
-    const { cursor, limit, sort, categoryId, tag, search, page } = validation.data;
-    const useCursor = !!cursor;
-    const take = limit + 1; // Fetch one extra to determine if there's a next page
+  const { cursor, limit, sort, categoryId, tag, search, page } = validation.data;
+  const useCursor = !!cursor;
+  const take = limit + 1; // Fetch one extra to determine if there's a next page
 
-    // Check cache
-    const cacheKeyStr = cacheKey([
-      "posts",
-      useCursor ? `cursor:${cursor}` : `page:${page}`,
-      String(limit),
-      sort || "new",
-      categoryId || "all",
-      tag || "all",
-      search || "all"
-    ]);
-    const cached = await getCached(cacheKeyStr, { prefix: "posts", ttl: CACHE_TTL.POSTS_FEED });
-    if (cached) {
-      return NextResponse.json(cached);
-    }
+  logger.debug({ cursor, limit, sort, categoryId, tag, search }, 'Fetching posts');
+
+  // Check cache
+  const cacheKeyStr = cacheKey([
+    "posts",
+    useCursor ? `cursor:${cursor}` : `page:${page}`,
+    String(limit),
+    sort || "new",
+    categoryId || "all",
+    tag || "all",
+    search || "all"
+  ]);
+  const cached = await getCached(cacheKeyStr, { prefix: "posts", ttl: CACHE_TTL.POSTS_FEED });
+  if (cached) {
+    logger.debug('Cache hit');
+    return NextResponse.json(cached);
+  }
 
     // Build where clause
     const where: any = {
@@ -224,53 +233,54 @@ export async function GET(request: NextRequest) {
     // Cache the response
     await setCached(cacheKeyStr, response, { prefix: "posts", ttl: CACHE_TTL.POSTS_FEED });
 
+    logger.info({ postCount: formattedPosts.length, hasMore }, 'Posts fetched successfully');
     return NextResponse.json(response);
-  } catch (error) {
-    console.error("Error fetching posts:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch posts" },
-      { status: 500 }
-    );
-  }
-}
+}, { method: 'GET', routeName: '/api/posts' });
 
 // POST /api/posts - Create a new post
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const POST = withApiHandler(async (request: NextRequest) => {
+  const requestId = getRequestId(request);
+  const logger = createLogger({ requestId });
+  
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    logger.warn('Unauthorized post creation attempt');
+    throw apiErrors.unauthorized();
+  }
 
-    // Rate limit: 5 posts per minute per user
-    const canCreatePost = await RATE_LIMITERS.createPost.checkLimit(session.user.id);
-    if (!canCreatePost) {
-      const retryAfter = await RATE_LIMITERS.createPost.getRetryAfter(session.user.id);
-      return rateLimitResponse(retryAfter);
-    }
+  // Rate limit: 5 posts per minute per user
+  const canCreatePost = await RATE_LIMITERS.createPost.checkLimit(session.user.id);
+  if (!canCreatePost) {
+    const retryAfter = await RATE_LIMITERS.createPost.getRetryAfter(session.user.id);
+    logger.warn({ userId: session.user.id }, 'Rate limit exceeded for post creation');
+    return rateLimitResponse(retryAfter);
+  }
 
-    const body = await request.json();
-    const validation = createPostSchema.safeParse(body);
+  const body = await request.json();
+  const validation = createPostSchema.safeParse(body);
 
-    if (!validation.success) {
-      // Return field-level errors
-      const fieldErrors: Record<string, string> = {};
-      validation.error.errors.forEach((err) => {
-        if (err.path.length > 0) {
-          fieldErrors[err.path[0] as string] = err.message;
-        }
-      });
-      return NextResponse.json(
-        { 
-          error: "Validation failed", 
-          fieldErrors,
-          details: validation.error.errors 
-        },
-        { status: 400 }
-      );
-    }
+  if (!validation.success) {
+    logger.warn({ validationErrors: validation.error.errors }, 'Invalid post data');
+    // Return field-level errors
+    const fieldErrors: Record<string, string> = {};
+    validation.error.errors.forEach((err) => {
+      if (err.path.length > 0) {
+        fieldErrors[err.path[0] as string] = err.message;
+      }
+    });
+    return NextResponse.json(
+      { 
+        error: "Validation failed", 
+        fieldErrors,
+        details: validation.error.errors 
+      },
+      { status: 400 }
+    );
+  }
 
-    const { title, content, categoryId, tagIds, isAnonymous } = validation.data;
+  const { title, content, categoryId, tagIds, isAnonymous } = validation.data;
+  
+  logger.debug({ userId: session.user.id, categoryId, isAnonymous }, 'Creating new post');
 
     // ===== ANTI-SPAM CHECKS =====
     
@@ -334,6 +344,7 @@ export async function POST(request: NextRequest) {
       });
       
       if (existingTags.length !== tagIds.length) {
+        logger.warn({ tagIds, foundCount: existingTags.length }, 'Invalid tags provided');
         return NextResponse.json(
           { 
             error: "Validation failed",
@@ -377,12 +388,6 @@ export async function POST(request: NextRequest) {
     // Invalidate feed cache
     await invalidateCache("posts:*", { prefix: "posts" });
 
+    logger.info({ postId: post.id, userId: session.user.id }, 'Post created successfully');
     return NextResponse.json(post, { status: 201 });
-  } catch (error) {
-    console.error("Error creating post:", error);
-    return NextResponse.json(
-      { error: "Failed to create post" },
-      { status: 500 }
-    );
-  }
-}
+}, { method: 'POST', routeName: '/api/posts' });
