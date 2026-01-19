@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface Message {
   role: "user" | "assistant";
@@ -8,6 +10,8 @@ interface Message {
 }
 
 export default function AiSupportPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -23,9 +27,31 @@ export default function AiSupportPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Effect to scroll to bottom - MUST be called before any conditional returns
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Redirect to login if not authenticated - AFTER all hooks
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login?callbackUrl=/ai-support");
+    }
+  }, [status, router]);
+
+  // Show loading while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!session) {
+    return null;
+  }
 
   async function send() {
     if (!input.trim()) return;

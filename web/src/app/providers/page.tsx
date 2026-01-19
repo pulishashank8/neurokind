@@ -1,5 +1,7 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useFacilities } from "@/lib/facilities";
 // import providersData from "@/data/providers.json";
 
@@ -17,28 +19,18 @@ function normalize(str: string) {
 }
 
 export default function ProvidersPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [query, setQuery] = useState("");
   const [zipCode, setZipCode] = useState("");
   const [radius, setRadius] = useState(25);
   const [serviceType, setServiceType] = useState<string>("ALL");
   const [limit, setLimit] = useState(24);
 
-  // Use facility search hook
+  // Use facility search hook - MUST be called before any conditional returns
   const { facilities, loading, error, hasMore, searchFacilities, loadMore } = useFacilities();
 
-  // Handle search
-  const handleSearch = async () => {
-    if (zipCode.length === 5) {
-      await searchFacilities({
-        zip_code: zipCode,
-        radius: radius,
-        service_type: serviceType === "ALL" ? null : serviceType,
-        autism_only: false,
-      });
-    }
-  };
-
-  // Filter facilities by query
+  // Filter facilities by query - MUST be called before any conditional returns
   const filtered = useMemo(() => {
     const q = normalize(query);
     return facilities
@@ -51,6 +43,39 @@ export default function ProvidersPage() {
       })
       .slice(0, limit);
   }, [facilities, query, limit]);
+
+  // Redirect to login if not authenticated - AFTER all hooks
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login?callbackUrl=/providers");
+    }
+  }, [status, router]);
+
+  // Show loading while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!session) {
+    return null;
+  }
+
+  // Handle search
+  const handleSearch = async () => {
+    if (zipCode.length === 5) {
+      await searchFacilities({
+        zip_code: zipCode,
+        radius: radius,
+        service_type: serviceType === "ALL" ? null : serviceType,
+        autism_only: false,
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen pt-20 pb-6 sm:pt-24 sm:pb-12">

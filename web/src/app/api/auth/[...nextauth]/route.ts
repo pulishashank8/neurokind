@@ -261,7 +261,8 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if ((token as any).disabled) {
-        return null;
+        // Return an empty session instead of null
+        return { expires: session.expires, user: undefined } as any;
       }
       if (session.user) {
         (session.user as any).id = token.id as string;

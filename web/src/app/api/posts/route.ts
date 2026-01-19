@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { createPostSchema, getPostsSchema } from "@/lib/validations/community";
 import DOMPurify from "isomorphic-dompurify";
 import { getCached, setCached, invalidateCache, CACHE_TTL, cacheKey } from "@/lib/redis";
-import { rateLimitResponse } from "@/lib/rateLimit";
+import { rateLimitResponse, RATE_LIMITERS } from "@/lib/rateLimit";
 
 // Reddit-style Hot algorithm: time-decayed score based on votes
 function calculateHotScore(voteScore: number, createdAt: Date): number {

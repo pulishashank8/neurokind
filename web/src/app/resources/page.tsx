@@ -1,115 +1,78 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 type Resource = {
   id: string;
   title: string;
-  category: "EDUCATION" | "SUPPORT" | "TOOLS" | "SELF_ADVOCACY";
-  description: string;
-  url: string;
-  external: boolean;
+  category: string;
+  content: string | null;
+  link: string | null;
+  views: number;
+  createdAt: string;
 };
-
-const RESOURCES: Resource[] = [
-  {
-    id: "r1",
-    title: "Autism Society",
-    category: "SUPPORT",
-    description: "National organization providing support, advocacy, and resources for individuals with autism.",
-    url: "https://www.autism-society.org",
-    external: true,
-  },
-  {
-    id: "r2",
-    title: "ADHD Awareness Month",
-    category: "EDUCATION",
-    description: "Educational resources and community support for ADHD.",
-    url: "https://www.adhdawarenessmonth.org",
-    external: true,
-  },
-  {
-    id: "r3",
-    title: "Dyslexia International",
-    category: "SUPPORT",
-    description: "Global community supporting individuals with dyslexia.",
-    url: "https://www.dyslexia-international.org",
-    external: true,
-  },
-  {
-    id: "r4",
-    title: "The Mighty",
-    category: "SUPPORT",
-    description: "Community for sharing stories and support related to chronic illness and disabilities.",
-    url: "https://www.themighty.com",
-    external: true,
-  },
-  {
-    id: "r5",
-    title: "Self Advocacy Resources",
-    category: "SELF_ADVOCACY",
-    description: "Learn how to advocate for yourself in educational, workplace, and healthcare settings.",
-    url: "#",
-    external: false,
-  },
-  {
-    id: "r6",
-    title: "Accessibility Tools Guide",
-    category: "TOOLS",
-    description: "Curated list of accessibility tools and apps to support your daily life.",
-    url: "#",
-    external: false,
-  },
-  {
-    id: "r7",
-    title: "Neurodiversity Hub",
-    category: "EDUCATION",
-    description: "Educational content about neurodiversity and celebrating neurodivergent strengths.",
-    url: "https://www.neurodiversityhub.org",
-    external: true,
-  },
-  {
-    id: "r8",
-    title: "Crisis Resources",
-    category: "SUPPORT",
-    description: "Emergency support and crisis hotlines available 24/7.",
-    url: "#",
-    external: false,
-  },
-];
 
 const CATEGORY_OPTIONS = [
   { label: "All Resources", value: "ALL" },
   { label: "Education", value: "EDUCATION" },
-  { label: "Support Groups", value: "SUPPORT" },
-  { label: "Tools & Apps", value: "TOOLS" },
-  { label: "Self Advocacy", value: "SELF_ADVOCACY" },
+  { label: "Therapy", value: "THERAPY" },
+  { label: "Nutrition", value: "NUTRITION" },
+  { label: "Behavior", value: "BEHAVIOR" },
+  { label: "Sleep", value: "SLEEP" },
+  { label: "Social Skills", value: "SOCIAL_SKILLS" },
+  { label: "Legal", value: "LEGAL" },
+  { label: "Financial", value: "FINANCIAL" },
+  { label: "Community", value: "COMMUNITY" },
+  { label: "Other", value: "OTHER" },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
   EDUCATION: "bg-blue-100 text-blue-700",
-  SUPPORT: "bg-purple-100 text-purple-700",
-  TOOLS: "bg-green-100 text-green-700",
-  SELF_ADVOCACY: "bg-orange-100 text-orange-700",
+  THERAPY: "bg-purple-100 text-purple-700",
+  NUTRITION: "bg-green-100 text-green-700",
+  BEHAVIOR: "bg-orange-100 text-orange-700",
+  SLEEP: "bg-indigo-100 text-indigo-700",
+  SOCIAL_SKILLS: "bg-pink-100 text-pink-700",
+  LEGAL: "bg-red-100 text-red-700",
+  FINANCIAL: "bg-yellow-100 text-yellow-700",
+  COMMUNITY: "bg-teal-100 text-teal-700",
+  OTHER: "bg-gray-100 text-gray-700",
 };
 
 export default function ResourcesPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("ALL");
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        const response = await fetch("/api/resources");
+        const data = await response.json();
+        setResources(data);
+      } catch (error) {
+        console.error("Error fetching resources:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResources();
+  }, []);
 
   const filtered = useMemo(() => {
-    return RESOURCES.filter((r) => {
+    return resources.filter((r) => {
       if (category !== "ALL" && r.category !== category) return false;
       if (search) {
         const q = search.toLowerCase();
         return (
           r.title.toLowerCase().includes(q) ||
-          r.description.toLowerCase().includes(q)
+          (r.content && r.content.toLowerCase().includes(q))
         );
       }
       return true;
     });
-  }, [search, category]);
+  }, [search, category, resources]);
 
   return (
     <div className="min-h-screen pt-20 pb-6 sm:pt-24 sm:pb-12">
@@ -154,56 +117,65 @@ export default function ResourcesPage() {
 
       {/* Results Count */}
       <p className="mb-4 text-sm text-gray-600">
-        Showing {filtered.length} of {RESOURCES.length} resources
+        Showing {filtered.length} of {resources.length} resources
       </p>
 
-      {/* Resource Grid */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((resource) => (
-          <a
-            key={resource.id}
-            href={resource.url}
-            target={resource.external ? "_blank" : undefined}
-            rel={resource.external ? "noopener noreferrer" : undefined}
-            className="group rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 group-hover:text-blue-700">
-                  {resource.title}
-                </h3>
-                <p
-                  className={`mt-1 inline-block rounded-full px-2 py-1 text-xs font-medium ${
-                    CATEGORY_COLORS[resource.category]
-                  }`}
-                >
-                  {resource.category.replace("_", " ")}
-                </p>
-              </div>
-              {resource.external && (
-                <svg
-                  className="h-5 w-5 text-gray-400 group-hover:text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  />
-                </svg>
-              )}
-            </div>
-            <p className="mt-3 text-sm text-gray-600">
-              {resource.description}
-            </p>
-          </a>
-        ))}
-      </div>
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center py-12">
+          <div className="text-gray-600">Loading resources...</div>
+        </div>
+      )}
 
-      {filtered.length === 0 && (
+      {/* Resource Grid */}
+      {!loading && (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((resource) => (
+            <a
+              key={resource.id}
+              href={resource.link || "#"}
+              target={resource.link ? "_blank" : undefined}
+              rel={resource.link ? "noopener noreferrer" : undefined}
+              className="group rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 group-hover:text-blue-700">
+                    {resource.title}
+                  </h3>
+                  <p
+                    className={`mt-1 inline-block rounded-full px-2 py-1 text-xs font-medium ${
+                      CATEGORY_COLORS[resource.category] || "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {resource.category.replace(/_/g, " ")}
+                  </p>
+                </div>
+                {resource.link && (
+                  <svg
+                    className="h-5 w-5 text-gray-400 group-hover:text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                )}
+              </div>
+              <p className="mt-3 text-sm text-gray-600">
+                {resource.content || "No description available"}
+              </p>
+            </a>
+          ))}
+        </div>
+      )}
+
+      {!loading && filtered.length === 0 && (
         <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
           <p className="text-gray-600">No resources match your search.</p>
         </div>
