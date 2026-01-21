@@ -9,7 +9,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  // directUrl = env(\"DIRECT_URL\")  // Optional for Vercel only
 }
 
 // ============================================================================
@@ -139,6 +139,8 @@ model User {
   id                    String     @id @default(cuid())
   email                 String     @unique
   hashedPassword        String?
+  emailVerified         Boolean    @default(false)
+  emailVerifiedAt       DateTime?
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
   lastLoginAt           DateTime?
@@ -162,9 +164,29 @@ model User {
   auditLogs             AuditLog[]
   rateLimitLogs         RateLimitLog[]
   createdResources      Resource[]
+  emailVerifications    EmailVerification[]
 
   @@index([email])
   @@index([createdAt])
+}
+
+// Email verification with OTP
+model EmailVerification {
+  id                    String     @id @default(cuid())
+  email                 String
+  otp                   String     @db.VarChar(6)
+  userId                String?
+  expiresAt             DateTime
+  verified              Boolean    @default(false)
+  verifiedAt            DateTime?
+  createdAt             DateTime   @default(now())
+
+  user                  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([otp])
+  @@index([expiresAt])
+  @@index([verified])
 }
 
 model Profile {
@@ -679,3 +701,4 @@ model DatasetGlossaryTerm {
   @@index([datasetId])
   @@index([termId])
 }
+

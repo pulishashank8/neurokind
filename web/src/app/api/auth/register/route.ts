@@ -13,7 +13,7 @@ import { createLogger } from "@/lib/logger";
 export const POST = withApiHandler(async (request: NextRequest) => {
   const requestId = getRequestId(request);
   const logger = createLogger({ requestId });
-  
+
   const body = await request.json();
 
   // Validate input first (don't count invalid requests against rate limit)
@@ -30,7 +30,7 @@ export const POST = withApiHandler(async (request: NextRequest) => {
   }
 
   const { email, password, username, displayName } = parsed.data;
-  
+
   // Rate limit: 5 registrations per hour per IP (after validation passes)
   const ip = getClientIp(request);
   const canRegister = await RATE_LIMITERS.register.checkLimit(ip);
@@ -41,70 +41,99 @@ export const POST = withApiHandler(async (request: NextRequest) => {
     return rateLimitResponse(retryAfter);
   }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
 
-    if (existingUser) {
-      logger.warn({ email: email.substring(0, 3) + '***' }, 'Registration attempt with existing email');
-      return NextResponse.json(
-        { error: "User already exists with this email" },
-        { status: 409 }
-      );
-    }
-
-    // Check if username is already taken
-    const existingUsername = await prisma.profile.findUnique({
-      where: { username },
-    });
-
-    if (existingUsername) {
-      logger.warn({ username }, 'Registration attempt with existing username');
-      return NextResponse.json(
-        { error: "Username already taken" },
-        { status: 409 }
-      );
-    }
-
-    // Hash password
-    const hashedPassword = await bcryptjs.hash(password, 10);
-
-    // Create user with profile
-    const user = await prisma.user.create({
-      data: {
-        email,
-        hashedPassword,
-        profile: {
-          create: {
-            username,
-            displayName,
-          },
-        },
-        // Assign PARENT role by default
-        userRoles: {
-          create: {
-            role: "PARENT",
-          },
-        },
-      },
-      include: {
-        profile: true,
-        userRoles: true,
-      },
-    });
-
-    logger.info({ userId: user.id, username }, 'User registered successfully');
+  if (existingUser) {
+    logger.warn({ email: email.substring(0, 3) + '***' }, 'Registration attempt with existing email');
     return NextResponse.json(
-      {
-        message: "User registered successfully",
-        user: {
-          id: user.id,
-          email: user.email,
-          profile: user.profile,
-          roles: user.userRoles.map((ur) => ur.role),
+      { error: "User already exists with this email" },
+      { status: 409 }
+    );
+  }
+
+  // Check if username is already taken
+  const existingUsername = await prisma.profile.findUnique({
+    where: { username },
+  });
+
+  if (existingUsername) {
+    logger.warn({ username }, 'Registration attempt with existing username');
+    return NextResponse.json(
+      { error: "Username already taken" },
+      { status: 409 }
+    );
+  }
+
+  // CHECK: Email must be verified via OTP before registration
+  const emailVerification = await prisma.emailVerification.findFirst({
+    where: {
+      email,
+      verified: true,
+    },
+    orderBy: {
+      verifiedAt: 'desc',
+    },
+  });
+
+  if (!emailVerification) {
+    logger.warn({ email: email.substring(0, 3) + '***' }, 'Registration attempt without email verification');
+    return NextResponse.json(
+      { error: "Email not verified. Please verify your email before registering." },
+      { status: 400 }
+    );
+  }
+
+  // Check if verification is recent (within 30 minutes)
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+  if (emailVerification.verifiedAt && emailVerification.verifiedAt < thirtyMinutesAgo) {
+    logger.warn({ email: email.substring(0, 3) + '***' }, 'Registration attempt with expired verification');
+    return NextResponse.json(
+      { error: "Email verification expired. Please verify your email again." },
+      { status: 400 }
+    );
+  }
+
+  // Hash password
+  const hashedPassword = await bcryptjs.hash(password, 10);
+
+  // Create user with profile
+  const user = await prisma.user.create({
+    data: {
+      email,
+      hashedPassword,
+      profile: {
+        create: {
+          username,
+          displayName,
         },
       },
-      { status: 201 }
-    );
+      // Assign PARENT role by default
+      userRoles: {
+        create: {
+          role: "PARENT",
+        },
+      },
+    },
+    include: {
+      profile: true,
+      userRoles: true,
+    },
+  });
+
+  logger.info({ userId: user.id, username }, 'User registered successfully');
+  return NextResponse.json(
+    {
+      message: "User registered successfully",
+      user: {
+        id: user.id,
+        email: user.email,
+        profile: user.profile,
+        roles: user.userRoles.map((ur) => ur.role),
+      },
+    },
+    { status: 201 }
+  );
 }, { method: 'POST', routeName: '/api/auth/register' });
