@@ -61,38 +61,28 @@ export async function cleanupDatabase() {
  * Call this once at the start of tests  
  */
 export async function seedEssentialData() {
-  // Check if categories already exist
-  const existingCategories = await prisma.category.count();
+  // Create default categories
+  await prisma.category.createMany({
+    data: [
+      { name: 'General Discussion', slug: 'general-discussion', description: 'General topics', order: 1 },
+      { name: 'Diagnosis & Assessment', slug: 'diagnosis', description: 'Diagnosis questions', order: 2 },
+      { name: 'Therapies & Treatments', slug: 'therapies', description: 'Treatment options', order: 3 },
+      { name: 'Education & School', slug: 'education', description: 'School support', order: 4 },
+    ],
+    skipDuplicates: true,
+  });
 
-  if (existingCategories === 0) {
-    // Create default categories
-    await prisma.category.createMany({
-      data: [
-        { name: 'General Discussion', slug: 'general-discussion', description: 'General topics', order: 1 },
-        { name: 'Diagnosis & Assessment', slug: 'diagnosis', description: 'Diagnosis questions', order: 2 },
-        { name: 'Therapies & Treatments', slug: 'therapies', description: 'Treatment options', order: 3 },
-        { name: 'Education & School', slug: 'education', description: 'School support', order: 4 },
-      ],
-      skipDuplicates: true,
-    });
-  }
-
-  // Check if tags already exist
-  const existingTags = await prisma.tag.count();
-
-  if (existingTags === 0) {
-    // Create default tags
-    await prisma.tag.createMany({
-      data: [
-        { name: 'Autism', slug: 'autism', color: '#3B82F6' },
-        { name: 'ADHD', slug: 'adhd', color: '#10B981' },
-        { name: 'Sensory', slug: 'sensory', color: '#F59E0B' },
-        { name: 'Education', slug: 'education', color: '#8B5CF6' },
-        { name: 'Behavior', slug: 'behavior', color: '#EF4444' },
-      ],
-      skipDuplicates: true,
-    });
-  }
+  // Create default tags
+  await prisma.tag.createMany({
+    data: [
+      { name: 'Autism', slug: 'autism', color: '#3B82F6' },
+      { name: 'ADHD', slug: 'adhd', color: '#10B981' },
+      { name: 'Sensory', slug: 'sensory', color: '#F59E0B' },
+      { name: 'Education', slug: 'education', color: '#8B5CF6' },
+      { name: 'Behavior', slug: 'behavior', color: '#EF4444' },
+    ],
+    skipDuplicates: true,
+  });
 }
 
 /**

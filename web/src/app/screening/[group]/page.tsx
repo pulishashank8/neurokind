@@ -84,7 +84,7 @@ export default function ScreeningFlowPage() {
       if (index < 19) {
         setIndex((i) => Math.min(19, i + 1));
       }
-    }, 300);
+    }, 600);
   };
 
   // Check if all questions have been answered

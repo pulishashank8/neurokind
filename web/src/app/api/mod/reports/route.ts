@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canModerate } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id || !(await canModerate(session.user.id))) {
+    const session = await getServerSession();
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await canModerate(session.user.id))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -34,6 +37,12 @@ export async function GET(request: NextRequest) {
       prisma.report.count({ where }),
     ]);
 
+    // Calculate some basic stats if requested (or just return them by default as expected by test)
+    const stats = {
+      totalReports: total,
+      openReports: await prisma.report.count({ where: { status: 'OPEN' } }),
+    };
+
     return NextResponse.json({
       reports: reports.map((r) => ({
         id: r.id,
@@ -49,6 +58,7 @@ export async function GET(request: NextRequest) {
       skip,
       take,
       hasMore: skip + take < total,
+      stats
     });
   } catch (e) {
     console.error("Error fetching reports:", e);

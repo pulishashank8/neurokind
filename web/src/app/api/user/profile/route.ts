@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ProfileUpdateSchema } from "@/lib/validators";
 import { updateProfileSchema } from "@/lib/validations/community";
 import { RATE_LIMITERS, rateLimitResponse } from "@/lib/rateLimit";
 import { withApiHandler, getRequestId } from "@/lib/apiHandler";
 import { createLogger } from "@/lib/logger";
+import DOMPurify from 'isomorphic-dompurify';
 
 // GET /api/user/profile
 export async function GET() {
@@ -28,10 +28,12 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      id: user.id,
-      email: user.email,
-      profile: user.profile,
-      roles: user.userRoles.map((ur: any) => ur.role),
+      user: {
+        id: user.id,
+        email: user.email,
+        profile: user.profile,
+        userRoles: user.userRoles,
+      }
     });
   } catch (error) {
     console.error("Profile fetch error:", error);
@@ -76,7 +78,10 @@ export const PUT = withApiHandler(async (request: NextRequest) => {
     );
   }
 
-  const { username, displayName, bio, avatarUrl } = validation.data;
+  const { username, displayName, bio, avatarUrl, location, website } = validation.data;
+
+  // Sanitize bio
+  const sanitizedBio = bio ? DOMPurify.sanitize(bio) : bio;
 
   logger.debug({ userId: session.user.id, username }, 'Updating profile');
 
@@ -101,8 +106,10 @@ export const PUT = withApiHandler(async (request: NextRequest) => {
     data: {
       ...(username && { username }),
       ...(displayName && { displayName }),
-      ...(bio !== undefined && { bio }),
+      ...(sanitizedBio !== undefined && { bio: sanitizedBio }),
       ...(avatarUrl !== undefined && { avatarUrl }),
+      ...(location !== undefined && { location }),
+      ...(website !== undefined && { website }),
     },
   });
 

@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canModerate } from "@/lib/rbac";
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id || !(await canModerate(session.user.id))) {
+    const session = await getServerSession();
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (!(await canModerate(session.user.id))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await req.json();
-    const { userId, isSuspended, reason } = body;
+    const { userId, isSuspended, reason, durationDays } = body;
+
+    if (durationDays !== undefined && (typeof durationDays !== 'number' || durationDays < 0)) {
+      return NextResponse.json({ error: "Invalid duration" }, { status: 400 });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -23,7 +30,7 @@ export async function POST(req: NextRequest) {
     // Update user profile shadowban status
     await prisma.profile.update({
       where: { userId },
-      data: { shadowbanned: isSuspended },
+      data: { shadowbanned: !!isSuspended },
     });
 
     await prisma.modActionLog.create({

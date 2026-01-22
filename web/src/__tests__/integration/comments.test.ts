@@ -9,6 +9,7 @@ import {
 } from '../helpers/auth';
 import { createMockRequest, parseResponse } from '../helpers/api';
 import { getTestPrisma } from '../helpers/database';
+import { getServerSession } from 'next-auth';
 
 // Mock NextAuth
 vi.mock('next-auth', () => ({
@@ -19,8 +20,6 @@ vi.mock('@/app/api/auth/[...nextauth]/route', () => ({
   authOptions: {},
 }));
 
-import { getServerSession } from 'next-auth';
-
 const prisma = getTestPrisma();
 
 describe('Comments API Integration Tests', () => {
@@ -30,7 +29,10 @@ describe('Comments API Integration Tests', () => {
   let mockSession: any;
 
   beforeEach(async () => {
-    testUser = await createTestUser('comment-test@example.com', 'password123', 'commenttester');
+    // Unique user to prevent conflicts
+    const uniqueId = Date.now();
+    testUser = await createTestUser(`comment-test-${uniqueId}@example.com`, 'password123', `commenttester${uniqueId}`);
+
     testCategory = await getSeededCategory('general-discussion');
     testPost = await createTestPost(testUser.id, testCategory.id, {
       title: 'Test Post for Comments',
@@ -112,6 +114,10 @@ describe('Comments API Integration Tests', () => {
       });
       const data = await parseResponse(response);
 
+      if (response.status !== 201) {
+        console.log('Create Reply Failed:', JSON.stringify(data, null, 2));
+      }
+
       expect(response.status).toBe(201);
       expect(data.content).toContain('This is a reply');
       expect(data.parentCommentId).toBe(parentComment.id);
@@ -174,6 +180,10 @@ describe('Comments API Integration Tests', () => {
       });
       const data = await parseResponse(response);
 
+      if (response.status !== 201) {
+        console.log('XSS Test Failed:', JSON.stringify(data, null, 2));
+      }
+
       expect(response.status).toBe(201);
       expect(data.content).not.toContain('<script>');
       expect(data.content).toContain('Safe text');
@@ -228,8 +238,9 @@ describe('Comments API Integration Tests', () => {
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(data)).toBe(true);
-      expect(data.length).toBeGreaterThan(0);
+      expect(data.comments).toBeDefined(); // Use data.comments!
+      expect(Array.isArray(data.comments)).toBe(true);
+      expect(data.comments.length).toBeGreaterThan(0);
     });
 
     it('should return threaded comment structure', async () => {
@@ -241,8 +252,11 @@ describe('Comments API Integration Tests', () => {
 
       expect(response.status).toBe(200);
 
+      // The API returns { comments: [...] }
+      const comments = data.comments;
+
       // Find root comments (those without parentCommentId)
-      const rootComments = data.filter((c: any) => !c.parentCommentId);
+      const rootComments = comments.filter((c: any) => !c.parentCommentId);
       expect(rootComments.length).toBeGreaterThan(0);
 
       // Check if root comments have children
@@ -283,7 +297,8 @@ describe('Comments API Integration Tests', () => {
 
       expect(response.status).toBe(200);
 
-      const anonymousComment = data.find((c: any) => c.isAnonymous === true);
+      const comments = data.comments;
+      const anonymousComment = comments.find((c: any) => c.isAnonymous === true);
       expect(anonymousComment).toBeDefined();
       expect(anonymousComment.author.username).toBe('Anonymous');
     });

@@ -17,15 +17,17 @@ export async function GET() {
         name: true,
         slug: true,
         description: true,
+        order: true,
         _count: {
           select: {
             posts: true,
           },
         },
       },
-      orderBy: {
-        name: "asc",
-      },
+      orderBy: [
+        { order: "asc" },
+        { name: "asc" }
+      ],
     });
 
     const formattedCategories = categories.map((category) => ({
@@ -33,6 +35,7 @@ export async function GET() {
       name: category.name,
       slug: category.slug,
       description: category.description,
+      order: category.order,
       postCount: category._count.posts,
     }));
 
