@@ -1,66 +1,80 @@
-import providers from "@/data/providers.json";
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { ProviderSpecialty } from "@prisma/client";
 
-type ProviderType =
-  | "THERAPIST"
-  | "DEVELOPMENTAL_PEDIATRICS"
-  | "SLP"
-  | "OT"
-  | "ABA"
-  | "BEHAVIORAL_THERAPY";
-
-type Provider = {
-  id: string;
-  name: string;
-  type: ProviderType;
-  city: string;
-  zip: string;
-  address: string;
-  phone?: string;
-};
-
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const q = searchParams.get("q")?.toLowerCase().trim();
-    const city = searchParams.get("city")?.toLowerCase().trim();
-    const zip = searchParams.get("zip")?.toLowerCase().trim();
-    const type = searchParams.get("type");
-    const limit = Math.min(Number.parseInt(searchParams.get("limit") || "50", 10), 100);
+    const searchParams = request.nextUrl.searchParams;
+    const city = searchParams.get("city");
+    const state = searchParams.get("state");
+    const specialty = searchParams.get("specialty");
+    const verified = searchParams.get("verified");
+    const sortBy = searchParams.get("sortBy");
+    const limitParam = searchParams.get("limit");
+    const limit = limitParam ? parseInt(limitParam) : undefined;
 
-    let filtered: Provider[] = providers as Provider[];
-
-    if (type && type !== "ALL") {
-      filtered = filtered.filter((p) => p.type === type);
-    }
-
-    if (q) {
-      filtered = filtered.filter((p) => {
-        const hay = `${p.name} ${p.address} ${p.city} ${p.zip}`.toLowerCase();
-        return hay.includes(q);
-      });
-    }
+    const where: any = {};
 
     if (city) {
-      filtered = filtered.filter((p) => p.city.toLowerCase() === city);
+      where.city = city;
     }
 
-    if (zip) {
-      filtered = filtered.filter((p) => p.zip.toLowerCase() === zip);
+    if (state) {
+      where.state = state;
     }
 
-    return Response.json({
-      success: true,
-      count: filtered.length,
-      data: filtered.slice(0, limit),
-      limit,
-    });
-  } catch (error) {
-    console.error("Failed to fetch providers:", error);
-    return Response.json(
-      {
-        success: false,
-        error: "Failed to fetch providers",
+    if (specialty) {
+      // Assuming specialty param matches the Enum string
+      where.specialties = {
+        has: specialty as ProviderSpecialty,
+      };
+    }
+
+    if (verified === "true") {
+      where.isVerified = true;
+    }
+
+    let orderBy: any = undefined;
+    if (sortBy === "rating") {
+      orderBy = { rating: "desc" };
+    } else {
+      // Default sort? ID or Name?
+      orderBy = { name: "asc" };
+    }
+
+    const providers = await prisma.provider.findMany({
+      where,
+      orderBy,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        address: true,
+        city: true,
+        state: true,
+        zipCode: true,
+        latitude: true,
+        longitude: true,
+        specialties: true,
+        rating: true,
+        totalReviews: true,
+        isVerified: true,
+        website: true,
       },
+    });
+
+    const serializedProviders = providers.map((p) => ({
+      ...p,
+      rating: p.rating ? Number(p.rating) : null,
+    }));
+
+    return NextResponse.json({ providers: serializedProviders });
+  } catch (error) {
+    console.error("Error fetching providers:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch providers" },
       { status: 500 }
     );
   }

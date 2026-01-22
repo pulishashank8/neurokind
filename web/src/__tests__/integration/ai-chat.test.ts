@@ -14,6 +14,23 @@ vi.mock('@/app/api/auth/[...nextauth]/route', () => ({
 
 import { getServerSession } from 'next-auth';
 
+// Mock global fetch for AI responses
+global.fetch = vi.fn(() =>
+    Promise.resolve({
+        ok: true,
+        json: () =>
+            Promise.resolve({
+                choices: [
+                    {
+                        message: {
+                            content: 'This is a mock AI response about autism.',
+                        },
+                    },
+                ],
+            }),
+    } as Response)
+);
+
 describe('AI Chat API Integration Tests', () => {
     let testUser: any;
     let mockSession: any;

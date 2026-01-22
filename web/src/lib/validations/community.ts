@@ -63,12 +63,14 @@ export const createReportSchema = z.object({
   reason: z.enum([
     "SPAM",
     "HARASSMENT",
+    "MISINFORMATION",
+    "INAPPROPRIATE",
     "MISINFO",
-    "SELF_HARM",
     "INAPPROPRIATE_CONTENT",
+    "SELF_HARM",
     "OTHER"
   ]),
-  details: z.string().max(1000).trim().optional(),
+  description: z.string().max(1000).trim().optional(),
 }).strict();
 
 // User Profile Schema
@@ -77,6 +79,8 @@ export const updateProfileSchema = z.object({
   displayName: z.string().min(1, "Display name is required").max(50, "Display name too long").trim().optional(),
   bio: z.string().max(500, "Bio too long").trim().optional(),
   avatarUrl: z.string().url("Invalid avatar URL").max(500).optional(),
+  location: z.string().max(100, "Location too long").trim().optional(),
+  website: z.string().url("Invalid website URL").max(500).optional(),
 }).strict();
 
 // Type exports

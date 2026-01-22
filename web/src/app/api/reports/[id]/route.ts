@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canModerate } from "@/lib/rbac";
 
@@ -58,7 +57,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session?.user?.id || !(await canModerate(session.user.id))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -68,7 +67,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const report = await prisma.report.findUnique({ where: { id } });
     if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    let updatedReport = report;
+    let updatedReport: any = report;
 
     switch (action) {
       case "DISMISS":

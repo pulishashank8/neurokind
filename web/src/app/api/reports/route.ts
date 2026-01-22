@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createReportSchema } from "@/lib/validations/community";
 import { canModerate } from "@/lib/rbac";
@@ -13,27 +12,25 @@ import {
   blockDuplicateReport,
 } from "@/lib/redis";
 
-type ReportStatus = "OPEN" | "UNDER_REVIEW" | "RESOLVED" | "DISMISSED";
-
-interface ReportWhereInput {
-  status?: ReportStatus;
-}
-
 // GET /api/reports - List reports with optional status filter + pagination
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id || !(await canModerate(session.user.id))) {
+    const session = await getServerSession();
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await canModerate(session.user.id))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const status = request.nextUrl.searchParams.get("status");
     const skip = Number.parseInt(request.nextUrl.searchParams.get("skip") || "0", 10);
     const take = Math.min(Number.parseInt(request.nextUrl.searchParams.get("take") || "20", 10), 100);
 
-    const where: ReportWhereInput = {};
+    const where: any = {};
     if (status && ["OPEN", "UNDER_REVIEW", "RESOLVED", "DISMISSED"].includes(status)) {
-      where.status = status as ReportStatus;
+      where.status = status;
     }
 
     const [reports, total] = await Promise.all([
@@ -58,9 +55,9 @@ export async function GET(request: NextRequest) {
       createdAt: r.createdAt,
       reporter: r.reporter
         ? {
-            id: r.reporter.id,
-            username: r.reporter.profile?.username ?? null,
-          }
+          id: r.reporter.id,
+          username: r.reporter.profile?.username ?? null,
+        }
         : null,
     }));
 
@@ -82,10 +79,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/reports - Create a report with rate limiting + duplicate prevention
+// POST /api/reports - Create a report
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -107,7 +104,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { targetType, targetId, reason, details } = validation.data;
+    let { targetType, targetId, reason, description } = validation.data;
+
+    // Map reasons to DB enums if needed
+    if (reason === "MISINFORMATION") (reason as any) = "MISINFO";
+    if (reason === "INAPPROPRIATE") (reason as any) = "INAPPROPRIATE_CONTENT";
 
     // Verify target exists
     if (targetType === "POST") {
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Duplicate prevention: Check if user already reported this target within 24h
+    // DB-backed duplicate prevention
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const existingReport = await prisma.report.findFirst({
       where: {
@@ -179,13 +180,15 @@ export async function POST(request: NextRequest) {
         reporterId: session.user.id,
         targetType,
         targetId,
-        reason,
-        description: details || null,
+        reason: reason as any,
+        description: description || null,
         status: "OPEN",
       },
       select: {
         id: true,
         reason: true,
+        targetType: true,
+        targetId: true,
         status: true,
         createdAt: true,
       },
@@ -196,8 +199,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message:
-          "Report submitted successfully. Our team will review it shortly.",
+        message: "Report submitted successfully.",
         report,
       },
       { status: 201 }

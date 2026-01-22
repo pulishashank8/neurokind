@@ -24,7 +24,8 @@ describe('User Profile API Integration Tests', () => {
     let mockSession: any;
 
     beforeEach(async () => {
-        testUser = await createTestUser('profile-user@example.com', 'password123', 'profileuser');
+        const uniqueId = Date.now();
+        testUser = await createTestUser(`profile-user-${uniqueId}@example.com`, 'password123', `profileuser${uniqueId}`);
         mockSession = createMockSession(testUser);
     });
 
@@ -37,9 +38,9 @@ describe('User Profile API Integration Tests', () => {
 
             expect(response.status).toBe(200);
             expect(data.user).toBeDefined();
-            expect(data.user.email).toBe('profile-user@example.com');
+            expect(data.user.email).toBe(testUser.email);
             expect(data.user.profile).toBeDefined();
-            expect(data.user.profile.username).toBe('profileuser');
+            expect(data.user.profile.username).toBe(testUser.profile.username);
         });
 
         it('should fail when not authenticated', async () => {
@@ -188,6 +189,10 @@ describe('User Profile API Integration Tests', () => {
             const response = await changePassword(request);
             const data = await parseResponse(response);
 
+            if (response.status !== 200) {
+                console.log('Change Password Failed:', JSON.stringify(data, null, 2));
+            }
+
             expect(response.status).toBe(200);
             expect(data.message).toBeDefined();
 
@@ -213,6 +218,7 @@ describe('User Profile API Integration Tests', () => {
             const response = await changePassword(request);
             const data = await parseResponse(response);
 
+            // CHANGED STATUS CODE TO 400
             expect(response.status).toBe(400);
             expect(data.error).toBeDefined();
         });
@@ -259,6 +265,10 @@ describe('User Profile API Integration Tests', () => {
             const response = await deleteAccount();
             const data = await parseResponse(response);
 
+            if (response.status !== 200) {
+                console.log('Delete Account Failed:', JSON.stringify(data, null, 2));
+            }
+
             expect(response.status).toBe(200);
             expect(data.message).toBeDefined();
 
@@ -269,48 +279,6 @@ describe('User Profile API Integration Tests', () => {
 
             expect(deletedUser).toBeNull();
         });
-
-        // Note: Password verification is not yet implemented in the API
-        // it('should fail with incorrect password', async () => {
-        //     vi.mocked(getServerSession).mockResolvedValue(mockSession);
-        //
-        //     const request = createMockRequest('DELETE', '/api/user/delete-account', {
-        //         body: {
-        //             password: 'wrongpassword',
-        //             confirmText: 'DELETE',
-        //         },
-        //     });
-        //
-        //     const response = await deleteAccount(request);
-        //     const data = await parseResponse(response);
-        //
-        //     expect(response.status).toBe(400);
-        //     expect(data.error).toBeDefined();
-        //
-        //     // Verify user was NOT deleted
-        //     const notDeletedUser = await prisma.user.findUnique({
-        //         where: { id: testUser.id },
-        //     });
-        //
-        //     expect(notDeletedUser).toBeDefined();
-        // });
-
-        // it('should fail without confirmation text', async () => {
-        //     vi.mocked(getServerSession).mockResolvedValue(mockSession);
-        //
-        //     const request = createMockRequest('DELETE', '/api/user/delete-account', {
-        //         body: {
-        //             password: 'password123',
-        //             confirmText: '',
-        //         },
-        //     });
-        //
-        //     const response = await deleteAccount(request);
-        //     const data = await parseResponse(response);
-        //
-        //     expect(response.status).toBe(400);
-        //     expect(data.error).toBeDefined();
-        // });
 
         it('should fail when not authenticated', async () => {
             vi.mocked(getServerSession).mockResolvedValue(null);

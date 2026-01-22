@@ -196,7 +196,9 @@ export async function getSeededCategory(slug: string = 'general-discussion') {
   });
 
   if (!category) {
-    throw new Error(`Seeded category '${slug}' not found. Available: general-discussion', diagnosis, therapies, education`);
+    const all = await prisma.category.findMany();
+    const available = all.map(c => c.slug).join(', ');
+    throw new Error(`Seeded category '${slug}' not found. Available: ${available}`);
   }
 
   return category;
@@ -211,7 +213,9 @@ export async function getSeededTag(slug: string = 'autism') {
   });
 
   if (!tag) {
-    throw new Error(`Seeded tag '${slug}' not found. Available: autism, adhd, sensory, education, behavior`);
+    const all = await prisma.tag.findMany();
+    const available = all.map(t => t.slug).join(', ');
+    throw new Error(`Seeded tag '${slug}' not found. Available: ${available}`);
   }
 
   return tag;

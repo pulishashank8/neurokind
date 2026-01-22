@@ -11,6 +11,7 @@ describe('Providers API Integration Tests', () => {
         await prisma.provider.createMany({
             data: [
                 {
+                    externalSource: 'MANUAL',
                     name: 'ABC Therapy Center',
                     phone: '555-0101',
                     email: 'contact@abctherapy.com',
@@ -26,6 +27,7 @@ describe('Providers API Integration Tests', () => {
                     isVerified: true,
                 },
                 {
+                    externalSource: 'MANUAL',
                     name: 'XYZ Speech Therapy',
                     phone: '555-0102',
                     email: 'info@xyzspeech.com',
@@ -41,6 +43,7 @@ describe('Providers API Integration Tests', () => {
                     isVerified: true,
                 },
                 {
+                    externalSource: 'MANUAL',
                     name: 'Autism Support Center',
                     phone: '555-0103',
                     email: 'support@autismcenter.com',
@@ -99,11 +102,16 @@ describe('Providers API Integration Tests', () => {
             const response = await GET(request);
             const data = await parseResponse(response);
 
+            if (response.status !== 200 || !data.providers.every((p: any) => p.specialties.includes('SLP'))) {
+                console.log('Filter Specialty Failed:', JSON.stringify(data, null, 2));
+            }
+
             expect(response.status).toBe(200);
             expect(data.providers.every((p: any) => p.specialties.includes('SLP'))).toBe(true);
         });
 
         it('should filter providers by multiple criteria', async () => {
+            // ... no change
             const request = createMockRequest('GET', '/api/providers', {
                 searchParams: {
                     state: 'IL',
@@ -112,6 +120,10 @@ describe('Providers API Integration Tests', () => {
             });
             const response = await GET(request);
             const data = await parseResponse(response);
+
+            if (response.status !== 200) {
+                console.log('Filter Multiple Failed:', JSON.stringify(data, null, 2));
+            }
 
             expect(response.status).toBe(200);
             expect(
@@ -126,6 +138,10 @@ describe('Providers API Integration Tests', () => {
             const response = await GET(request);
             const data = await parseResponse(response);
 
+            if (response.status !== 200 || !data.providers.every((p: any) => p.isVerified === true)) {
+                console.log('Filter Verified Failed:', JSON.stringify(data, null, 2));
+            }
+
             expect(response.status).toBe(200);
             expect(data.providers.every((p: any) => p.isVerified === true)).toBe(true);
         });
@@ -134,6 +150,10 @@ describe('Providers API Integration Tests', () => {
             const request = createMockRequest('GET', '/api/providers');
             const response = await GET(request);
             const data = await parseResponse(response);
+
+            if (response.status !== 200 || !data.providers || !data.providers[0]?.specialties) {
+                console.log('Required Fields Failed:', JSON.stringify(data, null, 2));
+            }
 
             expect(response.status).toBe(200);
             const provider = data.providers[0];
@@ -158,6 +178,10 @@ describe('Providers API Integration Tests', () => {
             const response = await GET(request);
             const data = await parseResponse(response);
 
+            if (response.status !== 200 || data.providers.length !== 0) {
+                console.log('Empty Array Failed:', JSON.stringify(data, null, 2));
+            }
+
             expect(response.status).toBe(200);
             expect(Array.isArray(data.providers)).toBe(true);
             expect(data.providers.length).toBe(0);
@@ -176,6 +200,9 @@ describe('Providers API Integration Tests', () => {
             for (let i = 1; i < data.providers.length; i++) {
                 const prev = data.providers[i - 1].rating || 0;
                 const curr = data.providers[i].rating || 0;
+                if (prev < curr) {
+                    console.log('Sort Failed:', JSON.stringify(data, null, 2));
+                }
                 expect(prev).toBeGreaterThanOrEqual(curr);
             }
         });

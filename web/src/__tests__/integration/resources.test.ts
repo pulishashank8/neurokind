@@ -3,10 +3,18 @@ import { GET } from '@/app/api/resources/route';
 import { createMockRequest, parseResponse } from '../helpers/api';
 import { getTestPrisma } from '../helpers/database';
 
+import { createTestUser } from '../helpers/auth';
+
 const prisma = getTestPrisma();
 
 describe('Resources API Integration Tests', () => {
+    let testUser: any;
+
     beforeEach(async () => {
+        // Create test user for resource ownership
+        const uniqueId = Date.now();
+        testUser = await createTestUser(`resource-test-${uniqueId}@example.com`, 'password123', `resourcetester${uniqueId}`);
+
         // Create test resources
         await prisma.resource.createMany({
             data: [
@@ -17,6 +25,7 @@ describe('Resources API Integration Tests', () => {
                     category: 'EDUCATION',
                     status: 'PUBLISHED',
                     views: 100,
+                    createdBy: testUser.id,
                 },
                 {
                     title: 'ABA Therapy Techniques',
@@ -25,14 +34,16 @@ describe('Resources API Integration Tests', () => {
                     category: 'THERAPY',
                     status: 'PUBLISHED',
                     views: 50,
+                    createdBy: testUser.id,
                 },
                 {
                     title: 'Sensory Integration Activities',
                     content: 'Activities for sensory processing',
                     link: 'https://example.com/sensory',
-                    category: 'ACTIVITIES',
+                    category: 'OTHER',
                     status: 'PUBLISHED',
                     views: 75,
+                    createdBy: testUser.id,
                 },
                 {
                     title: 'Draft Resource',
@@ -41,6 +52,7 @@ describe('Resources API Integration Tests', () => {
                     category: 'EDUCATION',
                     status: 'DRAFT',
                     views: 0,
+                    createdBy: testUser.id,
                 },
             ],
         });

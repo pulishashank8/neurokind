@@ -29,8 +29,9 @@ describe('Posts API Integration Tests', () => {
   let mockSession: any;
 
   beforeEach(async () => {
-    // Create test user
-    testUser = await createTestUser('post-test@example.com', 'password123', 'posttester');
+    // Create test user with unique email
+    const uniqueId = Date.now();
+    testUser = await createTestUser(`post-test-${uniqueId}@example.com`, 'password123', `posttester${uniqueId}`);
 
     // Use existing seeded category
     testCategory = await getSeededCategory('general-discussion');
@@ -137,6 +138,10 @@ describe('Posts API Integration Tests', () => {
       const response = await POST(request);
       const data = await parseResponse(response);
 
+      if (response.status !== 201) {
+        console.log('XSS Test Failed Response:', JSON.stringify(data, null, 2));
+      }
+
       expect(response.status).toBe(201);
       expect(data.content).not.toContain('<script>');
       expect(data.content).toContain('Normal text');
@@ -145,15 +150,19 @@ describe('Posts API Integration Tests', () => {
 
   describe('GET /api/posts - List Posts', () => {
     beforeEach(async () => {
-      // Create multiple test posts
+      // Create multiple test posts with delays to ensure distinct timestamps
       await createTestPost(testUser.id, testCategory.id, {
         title: 'Post 1',
         content: '<p>Content 1</p>',
       });
+      await new Promise(r => setTimeout(r, 200)); // Delay
+
       await createTestPost(testUser.id, testCategory.id, {
         title: 'Post 2',
         content: '<p>Content 2</p>',
       });
+      await new Promise(r => setTimeout(r, 200)); // Delay
+
       await createTestPost(testUser.id, testCategory.id, {
         title: 'Post 3',
         content: '<p>Content 3</p>',
