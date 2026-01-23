@@ -19,11 +19,11 @@ export const GET = withApiHandler(async (request: NextRequest) => {
     });
 
     if (!emailToken) {
-        return NextResponse.redirect(new URL("/login?error=InvalidToken", request.url));
+        return NextResponse.json({ error: "Invalid token" }, { status: 400 });
     }
 
     if (new Date() > emailToken.expiresAt) {
-        return NextResponse.redirect(new URL("/login?error=TokenExpired", request.url));
+        return NextResponse.json({ error: "Token expired" }, { status: 400 });
     }
 
     // Verify user
