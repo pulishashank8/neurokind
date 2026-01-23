@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+
 import Image from "next/image";
-import { Users, Shield, Brain, Heart, CheckCircle2, Quote, Sparkles, ArrowRight } from "lucide-react";
+import { Users, Shield, Brain, Heart, Quote, Sparkles, ArrowRight } from "lucide-react";
 
 export default function AboutPage() {
   return (
