@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Brain, Sparkles, Send, Bot, User, Info, AlertTriangle } from "lucide-react";
@@ -148,7 +149,14 @@ export default function AiSupportPage() {
                 {m.role === "user" && (
                   <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[var(--surface2)] border border-[var(--border)] flex items-center justify-center text-[var(--muted)] mt-1">
                     {session?.user?.image ? (
-                      <img src={session.user.image} alt="User" className="w-full h-full rounded-full" />
+                      <Image
+                        src={session.user.image}
+                        alt="User"
+                        width={40}
+                        height={40}
+                        className="w-full h-full rounded-full"
+                        unoptimized
+                      />
                     ) : (
                       <User className="w-5 h-5" />
                     )}
