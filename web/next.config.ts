@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // NOTE: Turbopack disabled via environment variable TURBOPACK=0
+  // Next.js 16.1.2 has worker stability issues with Turbopack
+
+  productionBrowserSourceMaps: true,
+
   images: {
     remotePatterns: [
       {
