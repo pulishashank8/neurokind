@@ -1,6 +1,7 @@
 import NavBar from "@/components/navbar";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { SessionProvider } from "@/app/providers";
 
@@ -34,6 +35,7 @@ export default function RootLayout({
           <main className="min-h-screen">
             {children}
           </main>
+          <Analytics />
         </SessionProvider>
       </body>
     </html>
