@@ -6,8 +6,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { 
   Users, Stethoscope, Brain, ClipboardCheck, ArrowRight, 
-  Activity, MessagesSquare, Bookmark, Heart, Wind, Phone,
-  ClipboardList, CreditCard, Sparkles, Quote
+  Activity, MessagesSquare, Bookmark, Heart, Wind,
+  ClipboardList, Sparkles, Quote
 } from "lucide-react";
 
 const QUOTES = [
@@ -16,6 +16,16 @@ const QUOTES = [
   { text: "Autism is not a tragedy. Ignorance is the tragedy.", author: "Kerry Magro" },
   { text: "The way we talk to our children becomes their inner voice.", author: "Peggy O'Mara" },
   { text: "In a world where you can be anything, be kind.", author: "Jennifer Dukes Lee" },
+  { text: "The only disability in life is a bad attitude.", author: "Scott Hamilton" },
+  { text: "Your child is not broken. They just see the world differently.", author: "Unknown" },
+  { text: "Progress, not perfection.", author: "Unknown" },
+  { text: "Embrace the unique spark in every child.", author: "Unknown" },
+  { text: "Small steps lead to big changes.", author: "Unknown" },
+  { text: "You are your child's best advocate.", author: "Unknown" },
+  { text: "Neurodiversity is a strength, not a weakness.", author: "Unknown" },
+  { text: "Patience and love can move mountains.", author: "Unknown" },
+  { text: "Celebrate every milestone, no matter how small.", author: "Unknown" },
+  { text: "Your love is their greatest therapy.", author: "Unknown" },
 ];
 
 export default function DashboardPage() {
@@ -84,10 +94,8 @@ export default function DashboardPage() {
   ];
 
   const supportTools = [
-    { href: "/calm", icon: Wind, label: "Calm Tool", color: "text-emerald-500 bg-emerald-500/10" },
-    { href: "/crisis", icon: Phone, label: "Crisis Help", color: "text-rose-500 bg-rose-500/10" },
+    { href: "/calm", icon: Wind, label: "Breathing & Calm", color: "text-emerald-500 bg-emerald-500/10" },
     { href: "/therapy-log", icon: ClipboardList, label: "Therapy Log", color: "text-purple-500 bg-purple-500/10" },
-    { href: "/emergency-card", icon: CreditCard, label: "Emergency Cards", color: "text-blue-500 bg-blue-500/10" },
   ];
 
   return (
@@ -115,20 +123,22 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Inspirational Quote Card */}
-          <div className="max-w-2xl mx-auto mb-16">
-            <div className="relative bg-gradient-to-br from-[var(--surface)] to-[var(--surface2)] rounded-3xl border border-[var(--border)] p-8 shadow-xl">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                  <Quote className="w-4 h-4 text-white" />
+          {/* Inspirational Quote Card - Compact */}
+          <div className="max-w-xl mx-auto mb-10">
+            <div className="relative bg-[var(--surface)] rounded-2xl border border-[var(--border)] px-6 py-5 shadow-md">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-md shadow-emerald-500/20">
+                  <Quote className="w-3.5 h-3.5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm sm:text-base font-medium text-[var(--text)] leading-relaxed italic">
+                    "{quote.text}"
+                  </p>
+                  <p className="mt-2 text-xs text-[var(--muted)] font-semibold">
+                    — {quote.author}
+                  </p>
                 </div>
               </div>
-              <p className="text-xl sm:text-2xl font-medium text-[var(--text)] text-center leading-relaxed italic">
-                "{quote.text}"
-              </p>
-              <p className="mt-4 text-sm text-[var(--muted)] text-center font-semibold">
-                — {quote.author}
-              </p>
             </div>
           </div>
 
@@ -171,16 +181,16 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {supportTools.map((tool) => {
                 const Icon = tool.icon;
                 return (
                   <Link key={tool.href} href={tool.href} className="group">
-                    <div className="flex flex-col items-center p-5 rounded-2xl bg-[var(--surface2)] border border-transparent hover:border-[var(--primary)]/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                      <div className={`w-12 h-12 rounded-xl ${tool.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                    <div className="flex items-center gap-4 p-5 rounded-2xl bg-[var(--surface2)] border border-transparent hover:border-[var(--primary)]/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                      <div className={`w-12 h-12 rounded-xl ${tool.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
                         <Icon className="w-6 h-6" />
                       </div>
-                      <span className="text-sm font-semibold text-[var(--text)] text-center">{tool.label}</span>
+                      <span className="text-sm font-semibold text-[var(--text)]">{tool.label}</span>
                     </div>
                   </Link>
                 );

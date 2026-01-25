@@ -18,12 +18,15 @@ import {
   Info,
   Menu,
   X,
-  Sparkles,
   Heart,
   Phone,
   Wind,
   ClipboardList,
-  CreditCard
+  CreditCard,
+  ShoppingBag,
+  LogOut,
+  Sun,
+  Moon
 } from "lucide-react";
 
 type SubItem = { href: string; label: string; icon: any; description: string };
@@ -64,6 +67,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Platform",
     items: [
       { href: "/about", label: "About Us", icon: Info, description: "Our mission & journey" },
+      { href: "/marketplace", label: "Marketplace", icon: ShoppingBag, description: "Curated products & resources" },
       { href: "/trust", label: "Trust & Safety", icon: Shield, description: "Security & moderation" },
       { href: "/settings", label: "Settings", icon: Settings, description: "Account preferences" },
     ]
@@ -161,49 +165,34 @@ export default function NavBar() {
 
             {/* Right Section: Get Help + Theme Toggle + Auth */}
             <div className="flex items-center gap-3">
-              {/* Get Help Button - Always visible, premium emerald styling */}
+              {/* Get Help Button - High visibility with border for light backgrounds */}
               <Link
                 href="/crisis"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:from-emerald-600 hover:to-teal-600 transition-all ring-2 ring-emerald-500/20"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose-500 text-white text-sm font-bold shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 hover:bg-rose-600 transition-all border-2 border-rose-600"
               >
                 <Phone className="w-3.5 h-3.5" />
                 Get Help
               </Link>
 
-              {/* Theme Toggle - Show only when logged in */}
+              {/* Theme Toggle - Clear icons with labels */}
               {session && (
                 <button
                   onClick={toggleTheme}
-                  className="inline-flex items-center justify-center w-10 h-10 rounded-lg transition-colors bg-transparent hover:bg-[var(--surface2)] text-[var(--text)]"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg transition-colors bg-[var(--surface2)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text)]"
                   aria-label="Toggle theme"
-                  title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+                  title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
                 >
                   {theme === "light" ? (
-                    // Moon SVG
-                    <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                    </svg>
+                    <>
+                      <Moon className="w-4 h-4 text-slate-600" />
+                      <span className="hidden xl:inline text-xs font-medium">Dark</span>
+                    </>
                   ) : (
-                    // Sun SVG
-                    <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 2a1 1 0 011 1v2a1 1 0 11-2 0V3a1 1 0 011-1zm0 10a1 1 0 100-2 1 1 0 000 2zm0 2a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1zM4.293 4.293a1 1 0 011.414 0L6.414 5.414a1 1 0 00-1.414-1.414L4.293 4.293zm11.414 0a1 1 0 011.414 1.414L16.414 6.414a1 1 0 11-1.414-1.414l1.414-1.414zM4 10a1 1 0 100-2 1 1 0 000 2zm12 0a1 1 0 100-2 1 1 0 000 2zM4.293 15.707a1 1 0 00-1.414 1.414L4.586 17a1 1 0 001.414-1.414l-1.707-1.293zm11.414 0a1 1 0 001.414 1.414l1.414-1.414a1 1 0 10-1.414-1.414l-1.414 1.414z" clipRule="evenodd" />
-                    </svg>
+                    <>
+                      <Sun className="w-4 h-4 text-amber-400" />
+                      <span className="hidden xl:inline text-xs font-medium">Light</span>
+                    </>
                   )}
-                </button>
-              )}
-
-              {/* Sign Out - Show only when logged in */}
-              {session && (
-                <button
-                  onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-[var(--muted)] hover:bg-[var(--surface2)] hover:text-[var(--text)]"
-                  title="Sign out"
-                >
-                  {/* Exit/Sign Out SVG */}
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm12 12H3V4h12v12zm1-12a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 012 0z" clipRule="evenodd" />
-                  </svg>
-                  <span className="hidden sm:inline">Sign Out</span>
                 </button>
               )}
 
@@ -221,10 +210,10 @@ export default function NavBar() {
           {/* Mobile Menu */}
           {mobileOpen && (
             <div className="lg:hidden border-t border-[var(--border)] bg-[var(--surface)] py-4 px-2 space-y-4 max-h-[80vh] overflow-y-auto">
-              {/* Mobile Get Help Button - Always at top, premium emerald styling */}
+              {/* Mobile Get Help Button - High visibility rose color */}
               <Link
                 href="/crisis"
-                className="flex items-center justify-center gap-2 mx-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/25"
+                className="flex items-center justify-center gap-2 mx-2 px-4 py-3 rounded-xl bg-rose-500 text-white font-bold shadow-lg shadow-rose-500/30 border-2 border-rose-600"
                 onClick={() => setMobileOpen(false)}
               >
                 <Phone className="w-5 h-5" />
@@ -266,29 +255,23 @@ export default function NavBar() {
 
               {/* Mobile Theme Toggle + Sign Out */}
               {session && (
-                <div className="border-t border-[var(--border)] mt-2 pt-2 flex flex-col gap-2">
+                <div className="border-t border-[var(--border)] mt-2 pt-4 flex flex-col gap-2">
                   <button
                     onClick={toggleTheme}
-                    className="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium transition-colors text-[var(--muted)] hover:bg-[var(--surface2)] hover:text-[var(--text)] w-full"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-colors bg-[var(--surface2)] hover:bg-[var(--surface)] text-[var(--text)] w-full"
                   >
                     {theme === "light" ? (
-                      <svg className="w-4 h-4 text-sky-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                      </svg>
+                      <Moon className="w-5 h-5 text-slate-600" />
                     ) : (
-                      <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 2a1 1 0 011 1v2a1 1 0 11-2 0V3a1 1 0 011-1zm0 10a1 1 0 100-2 1 1 0 000 2zm0 2a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1zM4.293 4.293a1 1 0 011.414 0L6.414 5.414a1 1 0 00-1.414-1.414L4.293 4.293zm11.414 0a1 1 0 011.414 1.414L16.414 6.414a1 1 0 11-1.414-1.414l1.414-1.414zM4 10a1 1 0 100-2 1 1 0 000 2zm12 0a1 1 0 100-2 1 1 0 000 2zM4.293 15.707a1 1 0 00-1.414 1.414L4.586 17a1 1 0 001.414-1.414l-1.707-1.293zm11.414 0a1 1 0 001.414 1.414l1.414-1.414a1 1 0 10-1.414-1.414l-1.414 1.414z" clipRule="evenodd" />
-                      </svg>
+                      <Sun className="w-5 h-5 text-amber-400" />
                     )}
-                    <span>{theme === "light" ? "Dark Mode" : "Light Mode"}</span>
+                    <span>{theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}</span>
                   </button>
                   <button
                     onClick={() => signOut({ callbackUrl: "/login" })}
-                    className="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium transition-colors text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 w-full"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-colors text-rose-600 bg-rose-50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-950/30 w-full"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
+                    <LogOut className="w-5 h-5" />
                     <span>Sign Out</span>
                   </button>
                 </div>
