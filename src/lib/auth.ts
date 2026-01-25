@@ -3,6 +3,9 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import type { Session } from "next-auth";
 import { prisma } from "@/lib/prisma";
 
+// Re-export authOptions for use in other files
+export { authOptions };
+
 export interface SessionWithRoles extends Session {
   user: Session["user"] & {
     id: string;
