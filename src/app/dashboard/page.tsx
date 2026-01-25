@@ -272,72 +272,71 @@ export default function DashboardPage() {
 
             {/* Right: Marketplace - Premium 3D Card */}
             <Link href="/marketplace" className="group block perspective-1000">
-              <div className="relative rounded-2xl p-5 sm:p-6 overflow-hidden transform-gpu transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 hover:rotate-y-2 hover:rotate-x-2"
+              <div className="relative rounded-2xl p-4 sm:p-5 overflow-hidden transform-gpu transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1"
                    style={{ transformStyle: 'preserve-3d' }}>
-                {/* Multi-layer gradient background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 opacity-90" />
-                <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/30 via-transparent to-pink-500/30" />
+                {/* Multi-layer gradient background - Emerald theme */}
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-green-400/20 via-transparent to-teal-300/20" />
                 
                 {/* Animated shine effect */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </div>
                 
                 {/* Floating orbs/particles */}
-                <div className="absolute top-3 right-3 w-16 h-16 bg-white/20 rounded-full blur-xl animate-pulse" />
-                <div className="absolute bottom-6 left-6 w-12 h-12 bg-yellow-300/30 rounded-full blur-lg animate-bounce" style={{ animationDuration: '3s' }} />
-                <div className="absolute top-1/2 right-8 w-8 h-8 bg-pink-300/25 rounded-full blur-md animate-ping" style={{ animationDuration: '2s' }} />
+                <div className="absolute top-2 right-2 w-12 h-12 bg-white/15 rounded-full blur-xl animate-pulse" />
+                <div className="absolute bottom-4 left-4 w-8 h-8 bg-teal-300/25 rounded-full blur-lg animate-bounce" style={{ animationDuration: '3s' }} />
                 
                 {/* Floating product icons */}
-                <div className="absolute top-4 right-4 flex gap-2" style={{ transform: 'translateZ(20px)' }}>
-                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white/80 shadow-lg group-hover:scale-110 transition-transform duration-300 hover:rotate-12">
+                <div className="absolute top-3 right-3 flex gap-1.5" style={{ transform: 'translateZ(20px)' }}>
+                  <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-sm shadow-lg group-hover:scale-110 transition-transform duration-300">
                     🧸
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white/80 shadow-lg group-hover:scale-110 transition-transform duration-300 delay-75 hover:-rotate-12">
+                  <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-sm shadow-lg group-hover:scale-110 transition-transform duration-300 delay-75">
                     🎧
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white/80 shadow-lg group-hover:scale-110 transition-transform duration-300 delay-150 hover:rotate-12">
+                  <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-sm shadow-lg group-hover:scale-110 transition-transform duration-300 delay-150">
                     📚
                   </div>
                 </div>
                 
                 {/* Content */}
                 <div className="relative z-10" style={{ transform: 'translateZ(30px)' }}>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white/90 text-[10px] font-bold uppercase tracking-wider mb-3">
-                    <Sparkles className="w-3 h-3" />
-                    150+ Products
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-white/25 backdrop-blur-sm flex items-center justify-center shadow-md">
+                      <ShoppingBag className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-white drop-shadow-sm">Marketplace</h2>
+                      <p className="text-[11px] text-white/75">Curated for your family</p>
+                    </div>
                   </div>
                   
-                  <h2 className="text-2xl sm:text-3xl font-black text-white mb-2 drop-shadow-lg">
-                    Marketplace
-                  </h2>
-                  
-                  <p className="text-white/85 text-sm leading-relaxed mb-5 max-w-xs">
-                    Sensory toys, weighted blankets, communication tools & more - handpicked for neurodiverse families.
+                  <p className="text-white/85 text-sm leading-relaxed mb-4">
+                    Sensory toys, weighted blankets, communication tools & more.
                   </p>
                   
                   {/* Category pills */}
-                  <div className="flex flex-wrap gap-1.5 mb-5">
-                    {['Sensory', 'Safety', 'Learning', 'Comfort'].map((cat, i) => (
-                      <span key={cat} className="px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-[10px] font-semibold group-hover:bg-white/25 transition-colors" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {['Sensory', 'Safety', 'Learning', 'Comfort'].map((cat) => (
+                      <span key={cat} className="px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-[10px] font-medium group-hover:bg-white/25 transition-colors">
                         {cat}
                       </span>
                     ))}
                   </div>
                   
                   {/* Premium CTA Button */}
-                  <div className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-amber-600 font-bold text-sm shadow-xl shadow-black/20 group-hover:shadow-2xl group-hover:shadow-black/30 group-hover:scale-105 transition-all duration-300">
-                    <ShoppingBag className="w-4 h-4" />
+                  <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-emerald-600 font-bold text-sm shadow-lg shadow-black/15 group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
                     Browse Collection
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
                 
                 {/* 3D border glow */}
-                <div className="absolute inset-0 rounded-2xl border-2 border-white/20 group-hover:border-white/40 transition-colors" />
+                <div className="absolute inset-0 rounded-2xl border border-white/20 group-hover:border-white/40 transition-colors" />
                 
                 {/* Bottom reflection effect */}
-                <div className="absolute -bottom-4 left-4 right-4 h-8 bg-gradient-to-t from-amber-600/30 to-transparent blur-xl rounded-full" />
+                <div className="absolute -bottom-3 left-4 right-4 h-6 bg-gradient-to-t from-emerald-600/25 to-transparent blur-xl rounded-full" />
               </div>
             </Link>
           </div>
