@@ -44,10 +44,14 @@ The platform uses a premium, luxurious UI with the following features:
 These features are 100% free (no paid APIs) and designed for real-world use by families:
 
 ### Calm/Breathing Tool (`/calm`)
-- Animated breathing circle with multiple patterns (4-4-4, 4-7-8, energizing, sleep prep)
+- Animated breathing circle with 4 distinctly different patterns:
+  - **Box Breathing** (4-4-4-4): Equal intervals for anxiety, panic, regaining focus
+  - **Deep Relaxation** (4-7-8): Long exhale activates parasympathetic system, for post-meltdown calming
+  - **Wake Up Breath** (2-0-2): Quick rhythmic breathing for energy and alertness
+  - **Grounding Breath** (5-2-7-3): Slow extended pattern for sensory overload or dissociation
 - Visual countdown and progress ring
 - Tracks completed breathing cycles
-- Designed for use during meltdowns or overwhelming moments
+- Each pattern shows timing and purpose description
 
 ### Crisis Resources (`/crisis`)
 - Emergency hotlines (988, Crisis Text Line, Autism Society)

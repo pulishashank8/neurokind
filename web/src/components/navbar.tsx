@@ -161,10 +161,10 @@ export default function NavBar() {
 
             {/* Right Section: Get Help + Theme Toggle + Auth */}
             <div className="flex items-center gap-3">
-              {/* Get Help Button - Always visible, prominent */}
+              {/* Get Help Button - Always visible, premium emerald styling */}
               <Link
                 href="/crisis"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500 text-white text-sm font-bold shadow-lg shadow-red-500/25 hover:shadow-red-500/40 hover:bg-red-600 transition-all"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:from-emerald-600 hover:to-teal-600 transition-all ring-2 ring-emerald-500/20"
               >
                 <Phone className="w-3.5 h-3.5" />
                 Get Help
@@ -221,10 +221,10 @@ export default function NavBar() {
           {/* Mobile Menu */}
           {mobileOpen && (
             <div className="lg:hidden border-t border-[var(--border)] bg-[var(--surface)] py-4 px-2 space-y-4 max-h-[80vh] overflow-y-auto">
-              {/* Mobile Get Help Button - Always at top */}
+              {/* Mobile Get Help Button - Always at top, premium emerald styling */}
               <Link
                 href="/crisis"
-                className="flex items-center justify-center gap-2 mx-2 px-4 py-3 rounded-xl bg-red-500 text-white font-bold shadow-lg"
+                className="flex items-center justify-center gap-2 mx-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/25"
                 onClick={() => setMobileOpen(false)}
               >
                 <Phone className="w-5 h-5" />

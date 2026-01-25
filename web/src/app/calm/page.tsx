@@ -8,10 +8,34 @@ import { Play, Pause, RotateCcw, Volume2, VolumeX, Heart, Wind, Waves, Sparkles 
 type BreathingPhase = "inhale" | "hold" | "exhale" | "rest";
 
 const BREATHING_PATTERNS = {
-  calm: { name: "Calm Breathing", inhale: 4, hold: 4, exhale: 4, rest: 0, color: "emerald" },
-  relaxed: { name: "4-7-8 Relaxation", inhale: 4, hold: 7, exhale: 8, rest: 0, color: "blue" },
-  energize: { name: "Energizing Breath", inhale: 4, hold: 0, exhale: 4, rest: 0, color: "amber" },
-  sleep: { name: "Sleep Preparation", inhale: 4, hold: 7, exhale: 8, rest: 2, color: "purple" },
+  calm: { 
+    name: "Box Breathing", 
+    inhale: 4, hold: 4, exhale: 4, rest: 4, 
+    color: "emerald",
+    icon: "square",
+    description: "Equal 4-second intervals. Best for anxiety, panic, and regaining focus during overwhelming moments."
+  },
+  relaxed: { 
+    name: "Deep Relaxation", 
+    inhale: 4, hold: 7, exhale: 8, rest: 0, 
+    color: "blue",
+    icon: "waves",
+    description: "Long exhale activates your parasympathetic system. Best for calming down after a meltdown or stressful event."
+  },
+  energize: { 
+    name: "Wake Up Breath", 
+    inhale: 2, hold: 0, exhale: 2, rest: 0, 
+    color: "amber",
+    icon: "sun",
+    description: "Quick, rhythmic breathing increases alertness. Best for mornings or when feeling sluggish and unmotivated."
+  },
+  grounding: { 
+    name: "Grounding Breath", 
+    inhale: 5, hold: 2, exhale: 7, rest: 3, 
+    color: "purple",
+    icon: "anchor",
+    description: "Slow, extended pattern with long exhale and rest. Best for sensory overload, dissociation, or feeling disconnected."
+  },
 };
 
 type PatternKey = keyof typeof BREATHING_PATTERNS;
@@ -151,23 +175,41 @@ export default function CalmPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
-          {(Object.keys(BREATHING_PATTERNS) as PatternKey[]).map((key) => (
-            <button
-              key={key}
-              onClick={() => {
-                setSelectedPattern(key);
-                handleReset();
-              }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedPattern === key
-                  ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25"
-                  : "bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)] hover:border-[var(--primary)]/50"
-              }`}
-            >
-              {BREATHING_PATTERNS[key].name}
-            </button>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 max-w-3xl mx-auto">
+          {(Object.keys(BREATHING_PATTERNS) as PatternKey[]).map((key) => {
+            const p = BREATHING_PATTERNS[key];
+            const isSelected = selectedPattern === key;
+            const colorClasses = {
+              emerald: isSelected ? "border-emerald-500 bg-emerald-500/10" : "hover:border-emerald-500/50",
+              blue: isSelected ? "border-blue-500 bg-blue-500/10" : "hover:border-blue-500/50",
+              amber: isSelected ? "border-amber-500 bg-amber-500/10" : "hover:border-amber-500/50",
+              purple: isSelected ? "border-purple-500 bg-purple-500/10" : "hover:border-purple-500/50",
+            };
+            return (
+              <button
+                key={key}
+                onClick={() => {
+                  setSelectedPattern(key);
+                  handleReset();
+                }}
+                className={`p-4 rounded-xl text-left transition-all border-2 ${
+                  colorClasses[p.color as keyof typeof colorClasses]
+                } ${!isSelected ? "bg-[var(--surface)] border-[var(--border)]" : ""}`}
+              >
+                <div className="font-semibold text-[var(--text)] text-sm mb-1">{p.name}</div>
+                <div className="text-xs text-[var(--muted)]">
+                  {p.inhale}-{p.hold > 0 ? p.hold : "−"}-{p.exhale}{p.rest > 0 ? `-${p.rest}` : ""}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4 mb-8 max-w-lg mx-auto text-center">
+          <p className="text-sm text-[var(--text)]">
+            <span className="font-semibold">{pattern.name}:</span>{" "}
+            <span className="text-[var(--muted)]">{pattern.description}</span>
+          </p>
         </div>
 
         <div className="relative flex items-center justify-center mb-8" style={{ height: '320px' }}>
