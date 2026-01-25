@@ -7,9 +7,12 @@ import { RATE_LIMITERS, rateLimitResponse } from "@/lib/rateLimit";
 import { z } from "zod";
 
 const connectionRequestSchema = z.object({
-  receiverId: z.string().min(1, "Receiver ID is required"),
+  receiverId: z.string().min(1).optional(),
+  receiverUsername: z.string().min(1).optional(),
   message: z.string().max(300, "Message too long").optional(),
-}).strict();
+}).refine(data => data.receiverId || data.receiverUsername, {
+  message: "Either receiverId or receiverUsername is required"
+});
 
 export async function GET(request: Request) {
   try {
@@ -168,26 +171,37 @@ export async function POST(request: Request) {
       );
     }
 
-    const { receiverId, message } = validation.data;
+    const { receiverId, receiverUsername, message } = validation.data;
 
-    if (senderId === receiverId) {
-      return NextResponse.json({ error: "Cannot connect with yourself" }, { status: 400 });
+    let receiver;
+    if (receiverId) {
+      receiver = await prisma.user.findUnique({
+        where: { id: receiverId },
+        include: { profile: true },
+      });
+    } else if (receiverUsername) {
+      const profile = await prisma.profile.findUnique({
+        where: { username: receiverUsername },
+        include: { user: true },
+      });
+      receiver = profile?.user ? { ...profile.user, profile } : null;
     }
-
-    const receiver = await prisma.user.findUnique({
-      where: { id: receiverId },
-      include: { profile: true },
-    });
 
     if (!receiver) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const actualReceiverId = receiver.id;
+
+    if (senderId === actualReceiverId) {
+      return NextResponse.json({ error: "Cannot connect with yourself" }, { status: 400 });
+    }
+
     const isBlocked = await prisma.blockedUser.findFirst({
       where: {
         OR: [
-          { blockerId: senderId, blockedId: receiverId },
-          { blockerId: receiverId, blockedId: senderId },
+          { blockerId: senderId, blockedId: actualReceiverId },
+          { blockerId: actualReceiverId, blockedId: senderId },
         ],
       },
     });
@@ -199,8 +213,8 @@ export async function POST(request: Request) {
     const existingRequest = await prisma.connectionRequest.findFirst({
       where: {
         OR: [
-          { senderId, receiverId },
-          { senderId: receiverId, receiverId: senderId },
+          { senderId, receiverId: actualReceiverId },
+          { senderId: actualReceiverId, receiverId: senderId },
         ],
       },
     });
@@ -223,7 +237,7 @@ export async function POST(request: Request) {
           where: { id: existingRequest.id },
           data: {
             senderId,
-            receiverId,
+            receiverId: actualReceiverId,
             message: message?.trim() || null,
             status: "PENDING",
             respondedAt: null,
@@ -237,7 +251,7 @@ export async function POST(request: Request) {
     await prisma.connectionRequest.create({
       data: {
         senderId,
-        receiverId,
+        receiverId: actualReceiverId,
         message: message?.trim() || null,
       },
     });
