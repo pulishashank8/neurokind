@@ -82,10 +82,30 @@ export default function NavBar() {
   const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [notifications, setNotifications] = useState({ unreadConnectionRequests: 0, unreadMessages: 0, totalUnread: 0 });
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (session?.user) {
+      const fetchNotifications = async () => {
+        try {
+          const res = await fetch("/api/notifications");
+          if (res.ok) {
+            const data = await res.json();
+            setNotifications(data);
+          }
+        } catch (error) {
+          console.error("Error fetching notifications:", error);
+        }
+      };
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [session]);
 
   // Check if current page is in auth routes (should hide nav)
   const isAuthPage =
@@ -121,10 +141,18 @@ export default function NavBar() {
                 Home
               </Link>
 
-              {NAV_GROUPS.map((group) => (
+              {NAV_GROUPS.map((group) => {
+                const isCommunityGroup = group.label === "Community";
+                const hasGroupNotification = isCommunityGroup && notifications.totalUnread > 0;
+                return (
                 <div key={group.label} className="relative group/nav">
-                  <button className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-bold text-[var(--muted)] group-hover/nav:text-[var(--text)] transition-colors">
+                  <button className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-bold text-[var(--muted)] group-hover/nav:text-[var(--text)] transition-colors relative">
                     {group.label}
+                    {hasGroupNotification && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[10px] font-bold flex items-center justify-center shadow-sm">
+                        {notifications.totalUnread > 9 ? "9+" : notifications.totalUnread}
+                      </span>
+                    )}
                     <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover/nav:opacity-100 transition-all group-hover/nav:rotate-180" />
                   </button>
 
@@ -135,6 +163,8 @@ export default function NavBar() {
                         {group.items.map((item) => {
                           const Icon = item.icon;
                           const isActive = pathname === item.href;
+                          const isMessages = item.href === "/messages";
+                          const hasNotifications = isMessages && notifications.totalUnread > 0;
                           return (
                             <Link
                               key={item.href}
@@ -144,12 +174,20 @@ export default function NavBar() {
                                 : "hover:bg-[var(--surface2)]"
                                 }`}
                             >
-                              <div className={`mt-0.5 p-1.5 rounded-lg ${isActive ? "bg-[var(--primary)] text-white" : "bg-[var(--surface2)] text-[var(--muted)]"}`}>
+                              <div className={`relative mt-0.5 p-1.5 rounded-lg ${isActive ? "bg-[var(--primary)] text-white" : "bg-[var(--surface2)] text-[var(--muted)]"}`}>
                                 <Icon className="w-4 h-4" />
+                                {hasNotifications && (
+                                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                    {notifications.totalUnread > 9 ? "9+" : notifications.totalUnread}
+                                  </span>
+                                )}
                               </div>
-                              <div>
-                                <div className={`text-sm font-bold ${isActive ? "text-[var(--primary)]" : "text-[var(--text)]"}`}>
+                              <div className="flex-1">
+                                <div className={`text-sm font-bold ${isActive ? "text-[var(--primary)]" : "text-[var(--text)]"} flex items-center gap-2`}>
                                   {item.label}
+                                  {hasNotifications && (
+                                    <span className="text-[10px] font-medium text-rose-500">New</span>
+                                  )}
                                 </div>
                                 <div className="text-[10px] text-[var(--muted)] leading-tight mt-0.5">
                                   {item.description}
@@ -184,7 +222,7 @@ export default function NavBar() {
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
 
             {/* Right Section: Get Help + Theme Toggle + Auth */}
@@ -254,15 +292,25 @@ export default function NavBar() {
                 Home
               </Link>
 
-              {NAV_GROUPS.map((group) => (
+              {NAV_GROUPS.map((group) => {
+                const isCommunityGroup = group.label === "Community";
+                const hasGroupNotification = isCommunityGroup && notifications.totalUnread > 0;
+                return (
                 <div key={group.label} className="space-y-2">
-                  <div className="px-4 text-[10px] font-black uppercase tracking-widest text-[var(--muted)] opacity-50">
+                  <div className="px-4 text-[10px] font-black uppercase tracking-widest text-[var(--muted)] opacity-50 flex items-center gap-2">
                     {group.label}
+                    {hasGroupNotification && (
+                      <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[10px] font-bold flex items-center justify-center">
+                        {notifications.totalUnread > 9 ? "9+" : notifications.totalUnread}
+                      </span>
+                    )}
                   </div>
                   <div className="grid gap-1">
                     {group.items.map((item) => {
                       const Icon = item.icon;
                       const isActive = pathname === item.href;
+                      const isMessages = item.href === "/messages";
+                      const hasNotifications = isMessages && notifications.totalUnread > 0;
                       return (
                         <Link
                           key={item.href}
@@ -270,14 +318,24 @@ export default function NavBar() {
                           className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive ? "bg-[var(--primary)] text-white" : "hover:bg-[var(--surface2)] text-[var(--text)]"}`}
                           onClick={() => setMobileOpen(false)}
                         >
-                          <Icon className="w-5 h-5" />
-                          <span className="font-bold">{item.label}</span>
+                          <div className="relative">
+                            <Icon className="w-5 h-5" />
+                            {hasNotifications && (
+                              <span className="absolute -top-1 -right-1 min-w-[14px] h-3.5 px-0.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[9px] font-bold flex items-center justify-center">
+                                {notifications.totalUnread > 9 ? "9+" : notifications.totalUnread}
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-bold flex-1">{item.label}</span>
+                          {hasNotifications && (
+                            <span className="text-[10px] font-medium text-rose-500 dark:text-rose-400">New</span>
+                          )}
                         </Link>
                       );
                     })}
                   </div>
                 </div>
-              ))}
+              )})}
 
               {/* Mobile Theme Toggle + Sign Out */}
               {session && (

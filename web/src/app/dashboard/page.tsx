@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { 
   Users, Stethoscope, Brain, ClipboardCheck, ArrowRight, 
-  Heart, Wind, ClipboardList, Sparkles, Quote, ShoppingBag
+  Heart, Wind, ClipboardList, Sparkles, Quote, ShoppingBag, Mail
 } from "lucide-react";
 
 const QUOTES = [
@@ -31,12 +31,32 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+  const [notifications, setNotifications] = useState({ unreadConnectionRequests: 0, unreadMessages: 0, totalUnread: 0 });
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     }
   }, [status, router]);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      const fetchNotifications = async () => {
+        try {
+          const res = await fetch("/api/notifications");
+          if (res.ok) {
+            const data = await res.json();
+            setNotifications(data);
+          }
+        } catch (error) {
+          console.error("Error fetching notifications:", error);
+        }
+      };
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [status]);
 
   if (status === "loading") {
     return (
@@ -168,6 +188,60 @@ export default function DashboardPage() {
               </Link>
             ))}
           </div>
+
+          {/* Premium Messages Card - Full Width */}
+          <Link href="/messages" className="group block mb-6">
+            <div className="relative rounded-3xl border border-[var(--border)] p-8 sm:p-10 shadow-xl bg-gradient-to-br from-[var(--surface)] via-indigo-50/50 to-violet-50/50 dark:via-indigo-950/20 dark:to-violet-950/20 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 hover:border-indigo-300/50 dark:hover:border-indigo-500/30">
+              {/* Animated background glow */}
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-violet-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+              <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:scale-110 transition-transform duration-700"></div>
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-purple-500/10 to-indigo-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 group-hover:scale-110 transition-transform duration-700"></div>
+              
+              <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-8">
+                {/* Icon Section */}
+                <div className="relative flex-shrink-0">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30 group-hover:scale-110 group-hover:shadow-indigo-500/50 transition-all duration-500">
+                    <Mail className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                  </div>
+                  {/* Notification Badge */}
+                  {notifications.totalUnread > 0 && (
+                    <div className="absolute -top-2 -right-2 min-w-[28px] h-7 px-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-bold flex items-center justify-center shadow-lg shadow-rose-500/40 animate-pulse">
+                      {notifications.totalUnread > 99 ? "99+" : notifications.totalUnread}
+                    </div>
+                  )}
+                  {/* Decorative ring */}
+                  <div className="absolute inset-0 w-20 h-20 sm:w-24 sm:h-24 rounded-3xl border-2 border-indigo-400/30 animate-ping opacity-20"></div>
+                </div>
+                
+                {/* Content Section */}
+                <div className="flex-1 text-center md:text-left">
+                  <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-400 dark:via-violet-400 dark:to-purple-400">
+                      Messages
+                    </h2>
+                    {notifications.totalUnread > 0 && (
+                      <span className="hidden sm:inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs font-bold">
+                        {notifications.unreadConnectionRequests > 0 && `${notifications.unreadConnectionRequests} request${notifications.unreadConnectionRequests > 1 ? 's' : ''}`}
+                        {notifications.unreadConnectionRequests > 0 && notifications.unreadMessages > 0 && ' • '}
+                        {notifications.unreadMessages > 0 && `${notifications.unreadMessages} new`}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[var(--muted)] text-base sm:text-lg leading-relaxed max-w-xl">
+                    Connect with other parents through private, secure conversations. Share experiences, offer support, and build meaningful connections within our community.
+                  </p>
+                </div>
+                
+                {/* CTA Section */}
+                <div className="flex-shrink-0">
+                  <div className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 text-white font-bold shadow-xl shadow-indigo-500/25 group-hover:shadow-indigo-500/50 group-hover:scale-105 transition-all duration-300">
+                    <span>Open Messages</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Link>
 
           {/* Support Tools & Marketplace - Side by Side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

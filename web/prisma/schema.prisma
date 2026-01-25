@@ -864,6 +864,7 @@ model DirectMessage {
   content               String          @db.Text
   createdAt             DateTime        @default(now())
   deletedAt             DateTime?
+  readAt                DateTime?
 
   conversation          Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender                User            @relation("DirectMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
@@ -872,6 +873,7 @@ model DirectMessage {
   @@index([senderId])
   @@index([createdAt])
   @@index([deletedAt])
+  @@index([readAt])
 }
 
 model BlockedUser {
@@ -931,6 +933,7 @@ model ConnectionRequest {
   createdAt             DateTime                  @default(now())
   updatedAt             DateTime                  @updatedAt
   respondedAt           DateTime?
+  seenAt                DateTime?
 
   sender                User                      @relation("ConnectionRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
   receiver              User                      @relation("ConnectionRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
@@ -940,5 +943,6 @@ model ConnectionRequest {
   @@index([receiverId])
   @@index([status])
   @@index([createdAt])
+  @@index([seenAt])
 }
 

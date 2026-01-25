@@ -143,7 +143,24 @@ The platform includes a connection-based private messaging system similar to Lin
 - Messages link in navbar under Community dropdown
 - Three tabs: Search Users, Pending Requests, Active Conversations
 
+## Notifications System
+The platform includes a notification system for messaging:
+
+### Features
+- **Unread Connection Requests**: Badge shows count of unseen pending requests
+- **Unread Messages**: Badge shows count of unread messages from conversations
+- **Dashboard Messages Card**: Premium, full-width card with notification badges
+- **Navbar Badges**: Notification indicators in Community dropdown and Messages link
+- **Auto-clear**: Notifications clear when user views pending requests tab or opens conversation
+- **Polling**: Notifications refresh every 30 seconds (no websockets)
+
+### API Endpoints
+- `GET /api/notifications` - Returns unread counts
+- `POST /api/notifications/mark-seen` - Marks notifications as seen
+
 ## Recent Updates (Jan 2026)
+- Added premium Messages card to dashboard with notification badges
+- Added notification system with badges in navbar and dashboard
 - Refactored messaging to LinkedIn-style connection request system
 - Added Google OAuth onboarding for username/display name collection
 - Removed direct messaging buttons from posts/comments (require connection first)

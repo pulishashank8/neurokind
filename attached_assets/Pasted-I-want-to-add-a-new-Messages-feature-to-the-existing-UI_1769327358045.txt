@@ -1,0 +1,25 @@
+I want to add a new “Messages” feature to the existing UI.
+
+In the main dashboard/home page, there is a section that currently shows Community, Find Care, AI Companion, M-CHAT Screening at the top, and below that Support Tools on the left and Marketplace on the right. I want to add one large, premium-looking Messages card or section positioned visually between Support Tools and Marketplace, centered and clearly visible. It should look consistent with the existing design system, spacing, colors, and typography used in the app.
+
+This Messages section should act as an entry point to the private messaging system. It should be large enough to feel important, not a small tile. The UI should feel professional and healthcare-grade, not chatty or playful.
+
+Clicking the Messages section should take the user to the Messages page where the LinkedIn-style private messaging system exists (connection requests, pending requests, active conversations).
+
+Add notifications for messaging:
+- When a user receives a new connection request, show a notification badge.
+- When a user receives a new message in an accepted conversation, show a notification badge.
+- The notification indicator should appear in the top navigation (for example near the profile or messages icon) and also reflect unread counts.
+- Notifications should clear when the user views the request or opens the conversation.
+
+Do not add real-time sockets unless already used elsewhere. Use the existing data-fetching patterns in the project. Notifications can be implemented using polling or existing API patterns.
+
+Do not modify the Community feature, posting, or commenting logic. Do not break existing UI layouts. Ensure the dashboard remains responsive on mobile, tablet, and desktop.
+
+UI requirements:
+- Messages card must visually align with existing cards
+- Use existing color tokens and theme (light/dark)
+- Smooth hover and focus states
+- Clear iconography (envelope/message icon)
+- Badge counters should be subtle and accessible
+But it should be in a premium look. It should be very attractive. And impressive in a luxury style premium.

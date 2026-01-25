@@ -115,8 +115,39 @@ export default function MessagesPage() {
     if (convId) {
       setSelectedConversation(convId);
       fetchMessages(convId);
+      markMessagesAsRead(convId);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (activeTab === "pending" && pendingReceived.length > 0) {
+      markConnectionRequestsAsSeen();
+    }
+  }, [activeTab, pendingReceived.length]);
+
+  const markConnectionRequestsAsSeen = async () => {
+    try {
+      await fetch("/api/notifications/mark-seen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "connection-requests" }),
+      });
+    } catch (error) {
+      console.error("Error marking requests as seen:", error);
+    }
+  };
+
+  const markMessagesAsRead = async (conversationId: string) => {
+    try {
+      await fetch("/api/notifications/mark-seen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "messages", conversationId }),
+      });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -306,6 +337,7 @@ export default function MessagesPage() {
     setSelectedConversation(convId);
     router.push(`/messages?conversation=${convId}`, { scroll: false });
     fetchMessages(convId);
+    markMessagesAsRead(convId);
   };
 
   const formatTime = (dateStr: string) => {
