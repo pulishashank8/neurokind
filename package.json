@@ -2,14 +2,18 @@
   "name": "neurokid",
   "version": "1.0.0",
   "private": true,
-  "workspaces": ["web"],
   "scripts": {
-    "postinstall": "npm install --prefix web",
-    "build": "npm install --prefix web && cd web && npx prisma generate",
-    "start": "npm run prod --prefix web",
-    "dev": "npm run dev --prefix web"
+    "postinstall": "cd web && npm install",
+    "build": "cd web && npm install && npx prisma generate",
+    "start": "cd web && npm run prod",
+    "dev": "cd web && npm run dev"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "tailwindcss": "^4",
+    "@tailwindcss/postcss": "^4",
+    "postcss": "^8"
   }
 }
