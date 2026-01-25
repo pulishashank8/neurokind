@@ -1,12 +1,13 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { 
-  Search, UserPlus, Users, MessageCircle, Send, ArrowLeft, 
-  Check, X, Clock, MoreVertical, Ban, Flag, Trash2
+  Search, UserPlus, MessageCircle, Send, ArrowLeft, 
+  Check, X, Clock
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -38,17 +39,6 @@ interface PendingRequest {
   };
 }
 
-interface Connection {
-  id: string;
-  connectedAt: string;
-  user: {
-    id: string;
-    username: string;
-    displayName: string;
-    avatarUrl?: string;
-  };
-}
-
 interface Conversation {
   id: string;
   otherUser: {
@@ -73,7 +63,7 @@ interface Message {
   createdAt: string;
 }
 
-export default function MessagesPage() {
+function MessagesContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -373,9 +363,7 @@ export default function MessagesPage() {
         <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-6">Messages</h1>
 
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Panel */}
           <div className={`w-full lg:w-96 ${selectedConversation ? "hidden lg:block" : ""}`}>
-            {/* Tabs */}
             <div className="flex bg-[var(--bg-secondary)] rounded-xl p-1 mb-4">
               <button
                 onClick={() => setActiveTab("search")}
@@ -417,9 +405,7 @@ export default function MessagesPage() {
               </button>
             </div>
 
-            {/* Tab Content */}
             <div className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden min-h-[400px]">
-              {/* Search Tab */}
               {activeTab === "search" && (
                 <div className="p-4">
                   <div className="relative mb-4">
@@ -499,10 +485,8 @@ export default function MessagesPage() {
                 </div>
               )}
 
-              {/* Pending Requests Tab */}
               {activeTab === "pending" && (
                 <div className="divide-y divide-[var(--border-light)]">
-                  {/* Received Requests */}
                   {pendingReceived.length > 0 && (
                     <div className="p-4">
                       <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase mb-3">
@@ -556,7 +540,6 @@ export default function MessagesPage() {
                     </div>
                   )}
 
-                  {/* Sent Requests */}
                   {pendingSent.length > 0 && (
                     <div className="p-4">
                       <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase mb-3">
@@ -606,12 +589,11 @@ export default function MessagesPage() {
                 </div>
               )}
 
-              {/* Conversations Tab */}
               {activeTab === "conversations" && (
                 <div>
                   {loading ? (
-                    <div className="flex justify-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--primary)]"></div>
                     </div>
                   ) : conversations.length > 0 ? (
                     <div className="divide-y divide-[var(--border-light)]">
@@ -619,7 +601,7 @@ export default function MessagesPage() {
                         <button
                           key={conv.id}
                           onClick={() => selectConversation(conv.id)}
-                          className={`w-full flex items-center gap-3 p-4 hover:bg-[var(--bg-primary)] transition-colors text-left ${
+                          className={`w-full p-4 flex items-center gap-3 hover:bg-[var(--bg-primary)] transition-colors text-left ${
                             selectedConversation === conv.id ? "bg-[var(--bg-primary)]" : ""
                           }`}
                         >
@@ -641,13 +623,12 @@ export default function MessagesPage() {
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-[var(--text-muted)] truncate">
-                              {conv.lastMessage
-                                ? conv.lastMessage.isFromMe
-                                  ? `You: ${conv.lastMessage.content}`
-                                  : conv.lastMessage.content
-                                : "No messages yet"}
-                            </p>
+                            {conv.lastMessage && (
+                              <p className="text-sm text-[var(--text-muted)] truncate">
+                                {conv.lastMessage.isFromMe ? "You: " : ""}
+                                {conv.lastMessage.content}
+                              </p>
+                            )}
                           </div>
                         </button>
                       ))}
@@ -655,8 +636,8 @@ export default function MessagesPage() {
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-[var(--text-muted)]">
                       <MessageCircle className="w-12 h-12 mb-3 opacity-50" />
-                      <p className="mb-2">No conversations yet</p>
-                      <p className="text-sm">Search for users and connect to start messaging</p>
+                      <p>No conversations yet</p>
+                      <p className="text-sm mt-1">Search for users to connect</p>
                     </div>
                   )}
                 </div>
@@ -664,12 +645,10 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          {/* Right Panel - Message Thread */}
-          <div className={`flex-1 ${!selectedConversation ? "hidden lg:block" : ""}`}>
-            {selectedConversation && otherUser ? (
-              <div className="bg-[var(--bg-secondary)] rounded-xl h-[calc(100vh-200px)] flex flex-col">
-                {/* Header */}
-                <div className="flex items-center gap-3 p-4 border-b border-[var(--border-light)]">
+          <div className={`flex-1 ${!selectedConversation ? "hidden lg:flex lg:items-center lg:justify-center" : ""}`}>
+            {selectedConversation ? (
+              <div className="bg-[var(--bg-secondary)] rounded-xl h-[600px] flex flex-col">
+                <div className="p-4 border-b border-[var(--border-light)] flex items-center gap-3">
                   <button
                     onClick={() => {
                       setSelectedConversation(null);
@@ -679,22 +658,25 @@ export default function MessagesPage() {
                   >
                     <ArrowLeft className="w-5 h-5 text-[var(--text-secondary)]" />
                   </button>
-                  <Image
-                    src={otherUser.avatarUrl || "/default-avatar.svg"}
-                    alt={otherUser.username}
-                    width={40}
-                    height={40}
-                    className="rounded-full"
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-[var(--text-primary)]">
-                      {otherUser.displayName}
-                    </p>
-                    <p className="text-sm text-[var(--text-muted)]">@{otherUser.username}</p>
-                  </div>
+                  {otherUser && (
+                    <>
+                      <Image
+                        src={otherUser.avatarUrl || "/default-avatar.svg"}
+                        alt={otherUser.username}
+                        width={40}
+                        height={40}
+                        className="rounded-full"
+                      />
+                      <div>
+                        <p className="font-medium text-[var(--text-primary)]">
+                          {otherUser.displayName}
+                        </p>
+                        <p className="text-sm text-[var(--text-muted)]">@{otherUser.username}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {messages.map((msg) => (
                     <div
@@ -702,18 +684,14 @@ export default function MessagesPage() {
                       className={`flex ${msg.isFromMe ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[75%] px-4 py-2 rounded-2xl ${
+                        className={`max-w-[70%] px-4 py-2 rounded-2xl ${
                           msg.isFromMe
                             ? "bg-[var(--primary)] text-white rounded-br-md"
                             : "bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-bl-md"
                         }`}
                       >
-                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                        <p
-                          className={`text-xs mt-1 ${
-                            msg.isFromMe ? "text-white/70" : "text-[var(--text-muted)]"
-                          }`}
-                        >
+                        <p>{msg.content}</p>
+                        <p className={`text-xs mt-1 ${msg.isFromMe ? "text-white/70" : "text-[var(--text-muted)]"}`}>
                           {formatTime(msg.createdAt)}
                         </p>
                       </div>
@@ -722,20 +700,19 @@ export default function MessagesPage() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input */}
                 <form onSubmit={sendMessage} className="p-4 border-t border-[var(--border-light)]">
                   <div className="flex gap-2">
                     <input
                       type="text"
+                      placeholder="Type a message..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type a message..."
                       className="flex-1 px-4 py-3 bg-[var(--bg-primary)] border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                     />
                     <button
                       type="submit"
                       disabled={!newMessage.trim() || sendingMessage}
-                      className="px-4 py-3 bg-[var(--primary)] text-white rounded-xl hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-4 py-3 bg-[var(--primary)] text-white rounded-xl hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Send className="w-5 h-5" />
                     </button>
@@ -743,35 +720,30 @@ export default function MessagesPage() {
                 </form>
               </div>
             ) : (
-              <div className="bg-[var(--bg-secondary)] rounded-xl h-[calc(100vh-200px)] flex flex-col items-center justify-center text-[var(--text-muted)]">
-                <MessageCircle className="w-16 h-16 mb-4 opacity-50" />
+              <div className="text-center text-[var(--text-muted)]">
+                <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
                 <p className="text-lg">Select a conversation</p>
-                <p className="text-sm">Choose a chat from the list to start messaging</p>
+                <p className="text-sm mt-1">Choose a chat from the list to start messaging</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Connection Request Modal */}
       {showConnectionModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-[var(--bg-secondary)] rounded-2xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--bg-secondary)] rounded-2xl p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
               Send Connection Request
             </h3>
             <textarea
+              placeholder="Add a message (optional)..."
               value={connectionMessage}
               onChange={(e) => setConnectionMessage(e.target.value)}
-              placeholder="Add a message (optional)"
               rows={3}
-              maxLength={300}
-              className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] resize-none"
+              className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] resize-none mb-4"
             />
-            <p className="text-xs text-[var(--text-muted)] mt-1 text-right">
-              {connectionMessage.length}/300
-            </p>
-            <div className="flex gap-3 mt-4">
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   setShowConnectionModal(null);
@@ -792,5 +764,17 @@ export default function MessagesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
+      </div>
+    }>
+      <MessagesContent />
+    </Suspense>
   );
 }
