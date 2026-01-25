@@ -190,6 +190,9 @@ model User {
   // Connection requests (LinkedIn-style)
   sentConnectionRequests     ConnectionRequest[] @relation("ConnectionRequestSender")
   receivedConnectionRequests ConnectionRequest[] @relation("ConnectionRequestReceiver")
+  
+  // Daily wins journal
+  dailyWins                  DailyWin[]
 
   @@index([email])
   @@index([createdAt])
@@ -944,5 +947,26 @@ model ConnectionRequest {
   @@index([status])
   @@index([createdAt])
   @@index([seenAt])
+}
+
+// ============================================================================
+// DAILY WINS JOURNAL
+// ============================================================================
+
+model DailyWin {
+  id                    String     @id @default(cuid())
+  userId                String
+  date                  DateTime   @db.Date
+  content               String     @db.Text
+  mood                  Int?       @db.SmallInt // 1-5 mood scale
+  category              String?    @db.VarChar(50) // optional category like "therapy", "school", "social", etc.
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date])
+  @@index([createdAt])
 }
 
