@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { User, UserPlus, Check, Clock, ArrowLeft, MessageCircle } from "lucide-react";
+import { User, UserPlus, Check, Clock, ArrowLeft, MessageCircle, FileText, ThumbsUp, Bookmark, Loader2 } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -16,6 +16,19 @@ interface ConnectionStatus {
   status: "none" | "pending_sent" | "pending_received" | "connected";
   requestId?: string;
 }
+
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  _count?: {
+    comments: number;
+  };
+  upvotes?: number;
+}
+
+type TabType = "posts" | "upvoted" | "saved";
 
 export default function UserProfilePage({
   params,
@@ -30,6 +43,13 @@ export default function UserProfilePage({
   const [sending, setSending] = useState(false);
   const [requestMessage, setRequestMessage] = useState("");
   const [showMessageInput, setShowMessageInput] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("posts");
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [upvotedPosts, setUpvotedPosts] = useState<Post[]>([]);
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [upvotedLoading, setUpvotedLoading] = useState(false);
+  const [savedLoading, setSavedLoading] = useState(false);
   
   const { data: session, status: sessionStatus } = useSession();
 
@@ -64,6 +84,79 @@ export default function UserProfilePage({
 
     fetchProfile();
   }, [username]);
+
+  useEffect(() => {
+    if (!profile) return;
+    
+    const fetchPosts = async () => {
+      setPostsLoading(true);
+      try {
+        const res = await fetch(`/api/posts?authorId=${profile.id}&limit=50`);
+        if (res.ok) {
+          const data = await res.json();
+          setPosts(data.posts || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch posts:", err);
+      } finally {
+        setPostsLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, [profile]);
+
+  const isOwnProfile = session?.user?.id === profile?.id;
+
+  useEffect(() => {
+    if (!isOwnProfile && activeTab !== "posts") {
+      setActiveTab("posts");
+    }
+  }, [isOwnProfile, activeTab]);
+
+  useEffect(() => {
+    if (!profile || activeTab !== "upvoted" || !isOwnProfile) return;
+    if (upvotedPosts.length > 0) return;
+    
+    const fetchUpvoted = async () => {
+      setUpvotedLoading(true);
+      try {
+        const res = await fetch(`/api/users/${encodeURIComponent(username)}/upvoted`);
+        if (res.ok) {
+          const data = await res.json();
+          setUpvotedPosts(data.posts || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch upvoted posts:", err);
+      } finally {
+        setUpvotedLoading(false);
+      }
+    };
+
+    fetchUpvoted();
+  }, [profile, activeTab, username, upvotedPosts.length, isOwnProfile]);
+
+  useEffect(() => {
+    if (!profile || activeTab !== "saved" || !isOwnProfile) return;
+    if (savedPosts.length > 0) return;
+    
+    const fetchSaved = async () => {
+      setSavedLoading(true);
+      try {
+        const res = await fetch(`/api/users/${encodeURIComponent(username)}/saved`);
+        if (res.ok) {
+          const data = await res.json();
+          setSavedPosts(data.posts || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch saved posts:", err);
+      } finally {
+        setSavedLoading(false);
+      }
+    };
+
+    fetchSaved();
+  }, [profile, activeTab, username, savedPosts.length, isOwnProfile]);
 
   const handleSendRequest = async () => {
     if (!profile || sending) return;
@@ -126,7 +219,48 @@ export default function UserProfilePage({
 
   if (!profile) return null;
 
-  const isOwnProfile = session?.user?.id === profile.id;
+  const renderPostsList = (postsList: Post[], isLoading: boolean, emptyMessage: string) => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
+        </div>
+      );
+    }
+
+    if (postsList.length === 0) {
+      return (
+        <div className="text-center py-12 text-[var(--muted)]">
+          <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p>{emptyMessage}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="divide-y divide-[var(--border)]">
+        {postsList.map((post) => (
+          <Link
+            key={post.id}
+            href={`/community/post/${post.id}`}
+            className="block p-4 hover:bg-[var(--surface2)] transition-colors"
+          >
+            <h3 className="font-semibold text-[var(--text)] mb-1 line-clamp-1">{post.title}</h3>
+            <p className="text-sm text-[var(--muted)] line-clamp-2 mb-2">{post.content}</p>
+            <div className="flex items-center gap-4 text-xs text-[var(--muted)]">
+              <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+              {post._count?.comments !== undefined && (
+                <span>{post._count.comments} comments</span>
+              )}
+              {post.upvotes !== undefined && (
+                <span>{post.upvotes} upvotes</span>
+              )}
+            </div>
+          </Link>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[var(--background)] pt-24 px-4 pb-12">
@@ -263,6 +397,52 @@ export default function UserProfilePage({
               </div>
             )}
           </div>
+        </div>
+
+        <div className="mt-6 bg-[var(--surface)] rounded-2xl border border-[var(--border)] overflow-hidden">
+          <div className="flex border-b border-[var(--border)]">
+            <button
+              onClick={() => setActiveTab("posts")}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === "posts"
+                  ? "text-[var(--primary)] border-b-2 border-[var(--primary)] -mb-px"
+                  : "text-[var(--muted)] hover:text-[var(--text)]"
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              Posts ({posts.length})
+            </button>
+            {isOwnProfile && (
+              <>
+                <button
+                  onClick={() => setActiveTab("upvoted")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === "upvoted"
+                      ? "text-[var(--primary)] border-b-2 border-[var(--primary)] -mb-px"
+                      : "text-[var(--muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  <ThumbsUp className="w-4 h-4" />
+                  Upvoted
+                </button>
+                <button
+                  onClick={() => setActiveTab("saved")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === "saved"
+                      ? "text-[var(--primary)] border-b-2 border-[var(--primary)] -mb-px"
+                      : "text-[var(--muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  <Bookmark className="w-4 h-4" />
+                  Saved
+                </button>
+              </>
+            )}
+          </div>
+
+          {activeTab === "posts" && renderPostsList(posts, postsLoading, "No posts yet")}
+          {activeTab === "upvoted" && isOwnProfile && renderPostsList(upvotedPosts, upvotedLoading, "No upvoted posts yet")}
+          {activeTab === "saved" && isOwnProfile && renderPostsList(savedPosts, savedLoading, "No saved posts yet")}
         </div>
       </div>
     </div>
