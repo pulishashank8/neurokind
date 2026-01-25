@@ -45,10 +45,10 @@ export async function GET() {
     await setCached("all", response, { prefix: "categories", ttl: CACHE_TTL.CATEGORIES });
 
     return NextResponse.json(response);
-  } catch (error) {
-    console.error("Error fetching categories:", error);
+  } catch (error: any) {
+    console.error("Error fetching categories:", error?.message || error);
     return NextResponse.json(
-      { error: "Failed to fetch categories" },
+      { error: "Failed to fetch categories", details: error?.message || "Unknown error", categories: [] },
       { status: 500 }
     );
   }
