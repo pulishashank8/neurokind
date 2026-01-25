@@ -68,8 +68,8 @@ function LoginContent() {
   return (
     <Card className="max-w-md mx-auto" hover={false}>
       <div className="text-center mb-6 sm:mb-8">
-        <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] flex items-center justify-center">
-          <span className="text-white font-bold text-xl sm:text-2xl">NK</span>
+        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-5 rounded-2xl overflow-hidden shadow-xl shadow-emerald-500/20 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-2">
+          <img src="/logo-icon.png" alt="NeuroKid" className="w-full h-full object-contain" />
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text)] mb-2">
           Welcome Back!

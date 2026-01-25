@@ -94,11 +94,11 @@ export default function NavBar() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] font-bold">
-                NK
+            <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
+              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20">
+                <img src="/logo-icon.png" alt="NeuroKid" className="w-full h-full object-contain" />
               </div>
-              <span className="hidden text-lg font-semibold sm:inline">
+              <span className="hidden text-lg font-bold sm:inline bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
                 NeuroKid
               </span>
             </Link>

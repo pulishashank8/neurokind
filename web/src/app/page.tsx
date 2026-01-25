@@ -40,14 +40,21 @@ export default function Home() {
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none"></div>
 
         <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[var(--surface2)] px-4 py-1.5 text-xs font-bold text-[var(--primary)] uppercase tracking-widest mb-8 border border-[var(--border)] shadow-sm animate-fade-in-up">
+          {/* Logo */}
+          <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 rounded-3xl overflow-hidden shadow-2xl shadow-emerald-500/30 bg-gradient-to-br from-white to-emerald-50 dark:from-slate-800 dark:to-emerald-900/20 p-2">
+            <img src="/logo-icon.png" alt="NeuroKid" className="w-full h-full object-contain" />
+          </div>
+
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-6 border border-emerald-500/20 shadow-sm">
             <Sparkles className="w-3.5 h-3.5" /> Welcome to NeuroKid
           </div>
 
-          <h1 className="text-5xl font-extrabold tracking-tight text-[var(--text)] sm:text-6xl lg:text-7xl mb-6">
-            <span className="text-[var(--primary)]">NeuroKid</span>
-            <span className="block text-3xl sm:text-5xl mt-2 font-bold text-[var(--muted)]">Empowering Families. Connecting Hearts.</span>
+          <h1 className="text-4xl font-extrabold tracking-tight text-[var(--text)] sm:text-5xl lg:text-6xl mb-4">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">NeuroKid</span>
           </h1>
+          <h2 className="text-2xl sm:text-4xl font-bold text-[var(--text)] mb-6">
+            Empowering Families. Connecting Hearts.
+          </h2>
 
           <p className="mx-auto mt-6 max-w-2xl text-xl text-[var(--muted)] leading-relaxed px-4">
             A compassionate digital ecosystem connecting you with community, verified providers, AI support, and resources.
@@ -175,8 +182,11 @@ export default function Home() {
       <div className="border-t border-[var(--border)] bg-[var(--surface)] py-12">
         <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-bold text-[var(--primary)]">NeuroKid</span>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20">
+                <img src="/logo-icon.png" alt="NeuroKid" className="w-full h-full object-contain" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">NeuroKid</span>
               <span className="text-sm text-[var(--muted)] pl-4 border-l border-[var(--border)]">© 2026</span>
             </div>
 

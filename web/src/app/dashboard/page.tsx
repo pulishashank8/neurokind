@@ -1,17 +1,27 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect } from "react";
-import { Users, Stethoscope, Brain, ClipboardCheck, ArrowRight, LogOut, Activity, MessagesSquare, Bookmark, ShoppingBag, Sparkles, Heart } from "lucide-react";
+import { useEffect, useState } from "react";
+import { 
+  Users, Stethoscope, Brain, ClipboardCheck, ArrowRight, 
+  Activity, MessagesSquare, Bookmark, Heart, Wind, Phone,
+  ClipboardList, CreditCard, Sparkles, Quote
+} from "lucide-react";
 
-// ... (rest of imports/code) 
-
+const QUOTES = [
+  { text: "Every child is gifted. They just unwrap their packages at different times.", author: "Unknown" },
+  { text: "Different, not less.", author: "Temple Grandin" },
+  { text: "Autism is not a tragedy. Ignorance is the tragedy.", author: "Kerry Magro" },
+  { text: "The way we talk to our children becomes their inner voice.", author: "Peggy O'Mara" },
+  { text: "In a world where you can be anything, be kind.", author: "Jennifer Dukes Lee" },
+];
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -23,8 +33,8 @@ export default function DashboardPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-[var(--primary)] border-t-transparent"></div>
-          <p className="mt-4 text-[var(--muted)]">Loading...</p>
+          <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent"></div>
+          <p className="mt-4 text-[var(--muted)]">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -38,205 +48,213 @@ export default function DashboardPage() {
     {
       id: "community",
       title: "Community",
-      description: "A safe space to share stories, ask questions, and find strength in numbers.",
+      description: "Connect with parents who understand your journey.",
       href: "/community",
-      icon: <Users className="w-8 h-8" />,
-      color: "bg-emerald-500",
-      stats: "Active Discussions",
+      icon: <Users className="w-7 h-7" />,
+      gradient: "from-emerald-500 to-teal-500",
+      shadowColor: "shadow-emerald-500/20",
     },
     {
       id: "providers",
-      title: "Healthcare Providers",
-      description: "Locate trusted professionals near you who specialize in neurodiverse care.",
+      title: "Find Care",
+      description: "Locate verified specialists in neurodiverse care.",
       href: "/providers",
-      icon: <Stethoscope className="w-8 h-8" />,
-      color: "bg-rose-500",
-      stats: "Verified Specialists",
+      icon: <Stethoscope className="w-7 h-7" />,
+      gradient: "from-rose-500 to-pink-500",
+      shadowColor: "shadow-rose-500/20",
     },
     {
       id: "ai-support",
-      title: "AI Support",
-      description: "Your always-available companion for guidance, resources, and quick answers.",
+      title: "AI Companion",
+      description: "24/7 guidance, resources, and quick answers.",
       href: "/ai-support",
-      icon: <Brain className="w-8 h-8" />,
-      color: "bg-purple-500",
-      stats: "24/7 Assistance",
+      icon: <Brain className="w-7 h-7" />,
+      gradient: "from-purple-500 to-violet-500",
+      shadowColor: "shadow-purple-500/20",
     },
     {
       id: "screening",
-      title: "Autism Screening",
-      description: "Validated screening tools to help you understand your child's developmental milestones.",
+      title: "M-CHAT Screening",
+      description: "Validated developmental milestone assessment.",
       href: "/screening",
-      icon: <ClipboardCheck className="w-8 h-8" />,
-      color: "bg-green-500",
-      stats: "M-CHAT-R/F™",
+      icon: <ClipboardCheck className="w-7 h-7" />,
+      gradient: "from-blue-500 to-cyan-500",
+      shadowColor: "shadow-blue-500/20",
     },
   ];
 
+  const supportTools = [
+    { href: "/calm", icon: Wind, label: "Calm Tool", color: "text-emerald-500 bg-emerald-500/10" },
+    { href: "/crisis", icon: Phone, label: "Crisis Help", color: "text-rose-500 bg-rose-500/10" },
+    { href: "/therapy-log", icon: ClipboardList, label: "Therapy Log", color: "text-purple-500 bg-purple-500/10" },
+    { href: "/emergency-card", icon: CreditCard, label: "Emergency Cards", color: "text-blue-500 bg-blue-500/10" },
+  ];
+
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      {/* Header Section - Enhanced */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-[var(--surface)] to-[var(--background)] border-b border-[var(--border)] pt-10 pb-16">
-        {/* Abstract Shapes for premium feel */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[var(--primary)]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
-        <div className="absolute top-10 left-10 w-32 h-32 bg-teal-400/10 rounded-full blur-2xl pointer-events-none"></div>
+    <div className="min-h-screen bg-gradient-to-b from-[var(--background)] via-[var(--surface)] to-[var(--background)]">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden pt-8 pb-20">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-teal-500/10 to-transparent rounded-full blur-3xl translate-y-1/2 -translate-x-1/3"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-500/5 rounded-full blur-3xl"></div>
+        </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-bold uppercase tracking-wider w-fit">
-                <Sparkles className="w-3 h-3" />
-                Member Dashboard
+          {/* Welcome Section */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-semibold mb-6">
+              <Sparkles className="w-4 h-4" />
+              Your Safe Space
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-[var(--text)] tracking-tight mb-4">
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">{session?.user?.name || "Friend"}</span>
+            </h1>
+            <p className="text-lg text-[var(--muted)] max-w-2xl mx-auto">
+              Your journey matters. Explore resources, connect with community, or find support today.
+            </p>
+          </div>
+
+          {/* Inspirational Quote Card */}
+          <div className="max-w-2xl mx-auto mb-16">
+            <div className="relative bg-gradient-to-br from-[var(--surface)] to-[var(--surface2)] rounded-3xl border border-[var(--border)] p-8 shadow-xl">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <Quote className="w-4 h-4 text-white" />
+                </div>
               </div>
-              <h1 className="text-4xl font-extrabold text-[var(--text)] tracking-tight">
-                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-teal-500">{session?.user?.name || "Friend"}</span>!
-              </h1>
-              <p className="text-[var(--muted)] text-lg max-w-2xl leading-relaxed">
-                Your safe space is ready. Explore new resources, connect with the community, or find support today.
+              <p className="text-xl sm:text-2xl font-medium text-[var(--text)] text-center leading-relaxed italic">
+                "{quote.text}"
+              </p>
+              <p className="mt-4 text-sm text-[var(--muted)] text-center font-semibold">
+                — {quote.author}
               </p>
             </div>
-
-            <button
-              onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
-              className="group flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)]/50 backdrop-blur-sm px-5 py-3 text-sm font-semibold text-[var(--muted)] hover:text-red-500 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all shadow-sm hover:shadow-md"
-            >
-              <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-              Sign Out
-            </button>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="mx-auto max-w-7xl px-4 -mt-8 pb-20 sm:px-6 lg:px-8 relative z-20">
-
-        {/* Modules Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {modules.map((module) => (
-            <Link key={module.id} href={module.href}>
-              <div className="group h-full cursor-pointer">
-                <div className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)] transition-all duration-300 hover:shadow-[var(--shadow-lg)] hover:-translate-y-1 overflow-hidden relative">
-                  {/* Hover Gradient Overlay */}
-                  <div className={`absolute top-0 left-0 w-full h-1 ${module.color}`}></div>
-
-                  {/* Icon with Solid Background for Visibility */}
-                  <div className={`mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl ${module.color} text-white shadow-lg transition-transform group-hover:scale-110`}>
+          {/* Main Modules Grid - 3D Cards */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-12">
+            {modules.map((module) => (
+              <Link key={module.id} href={module.href} className="group">
+                <div className={`relative h-full rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-lg ${module.shadowColor} transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:border-transparent overflow-hidden`}>
+                  <div className={`absolute inset-0 bg-gradient-to-br ${module.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
+                  
+                  <div className={`relative z-10 w-14 h-14 rounded-2xl bg-gradient-to-br ${module.gradient} text-white flex items-center justify-center shadow-lg ${module.shadowColor} mb-5 group-hover:scale-110 transition-transform duration-300`}>
                     {module.icon}
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h2 className="text-xl font-bold text-[var(--text)] group-hover:text-[var(--primary)] transition-colors">
-                        {module.title}
-                      </h2>
-                    </div>
-
-                    <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">
-                      {module.description}
-                    </p>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
-                    <span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">{module.stats}</span>
-                    <div className="rounded-full bg-[var(--surface2)] p-2 text-[var(--text)] transition-all group-hover:bg-[var(--primary)] group-hover:text-white">
-                      <ArrowRight className="w-4 h-4" />
-                    </div>
+                  
+                  <h3 className="relative z-10 text-xl font-bold text-[var(--text)] mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-emerald-500 group-hover:to-teal-500 transition-all">
+                    {module.title}
+                  </h3>
+                  <p className="relative z-10 text-sm text-[var(--muted)] leading-relaxed mb-4">
+                    {module.description}
+                  </p>
+                  
+                  <div className="relative z-10 flex items-center text-sm font-semibold text-[var(--primary)] group-hover:gap-2 transition-all">
+                    <span>Explore</span>
+                    <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                   </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
 
-        {/* Dashboard Widgets Row */}
-        <div className="mt-8 grid gap-8 lg:grid-cols-3">
-          {/* Quick Stats Widget */}
-          <div className="lg:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)]">
+          {/* Support Tools Quick Access */}
+          <div className="bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-8 shadow-lg mb-12">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
-                <Activity className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <Heart className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-lg font-bold text-[var(--text)]">Your Activity</h3>
+              <div>
+                <h2 className="text-xl font-bold text-[var(--text)]">Support Tools</h2>
+                <p className="text-sm text-[var(--muted)]">Free wellness resources for your family</p>
+              </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Link href="/screening" className="flex flex-col items-center justify-center rounded-xl bg-[var(--surface2)] p-4 text-center transition-all hover:bg-[var(--primary)] hover:text-white group">
-                <ClipboardCheck className="w-6 h-6 mb-2 text-[var(--primary)] group-hover:text-white" />
-                <span className="text-sm font-bold text-[var(--text)] group-hover:text-white">My Screenings</span>
-              </Link>
-
-              <Link href="/community" className="flex flex-col items-center justify-center rounded-xl bg-[var(--surface2)] p-4 text-center transition-all hover:bg-emerald-500 hover:text-white group">
-                <MessagesSquare className="w-6 h-6 mb-2 text-emerald-500 group-hover:text-white" />
-                <span className="text-sm font-bold text-[var(--text)] group-hover:text-white">My Posts</span>
-              </Link>
-
-              <Link href="/community?saved=1" className="flex flex-col items-center justify-center rounded-xl bg-[var(--surface2)] p-4 text-center transition-all hover:bg-rose-500 hover:text-white group">
-                <Bookmark className="w-6 h-6 mb-2 text-rose-500 group-hover:text-white" />
-                <span className="text-sm font-bold text-[var(--text)] group-hover:text-white">Saved Posts</span>
-              </Link>
-
-              <Link href="/resources?saved=1" className="flex flex-col items-center justify-center rounded-xl bg-[var(--surface2)] p-4 text-center transition-all hover:bg-blue-500 hover:text-white group">
-                <Heart className="w-6 h-6 mb-2 text-blue-500 group-hover:text-white" />
-                <span className="text-sm font-bold text-[var(--text)] group-hover:text-white">Saved Resources</span>
-              </Link>
-            </div>
-
-            <div className="mt-6 p-4 rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-slate-800 dark:border-slate-700">
-              <p className="text-sm font-medium text-center text-emerald-900 dark:text-emerald-200">
-                "Every step forward is a victory to be celebrated."
-              </p>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {supportTools.map((tool) => {
+                const Icon = tool.icon;
+                return (
+                  <Link key={tool.href} href={tool.href} className="group">
+                    <div className="flex flex-col items-center p-5 rounded-2xl bg-[var(--surface2)] border border-transparent hover:border-[var(--primary)]/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                      <div className={`w-12 h-12 rounded-xl ${tool.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <span className="text-sm font-semibold text-[var(--text)] text-center">{tool.label}</span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
-          {/* Marketplace Widget - Redesigned */}
-          <div className="rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[var(--surface)] to-orange-50/50 dark:to-orange-950/20 p-6 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-            {/* Background sparkle */}
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-400/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+          {/* Activity & Quick Links */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Your Activity */}
+            <div className="bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-8 shadow-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-blue-500" />
+                </div>
+                <h2 className="text-xl font-bold text-[var(--text)]">Your Activity</h2>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <Link href="/screening" className="group flex items-center gap-3 p-4 rounded-xl bg-[var(--surface2)] hover:bg-emerald-500 transition-all">
+                  <ClipboardCheck className="w-5 h-5 text-emerald-500 group-hover:text-white transition-colors" />
+                  <span className="text-sm font-semibold text-[var(--text)] group-hover:text-white transition-colors">Screenings</span>
+                </Link>
+                <Link href="/community" className="group flex items-center gap-3 p-4 rounded-xl bg-[var(--surface2)] hover:bg-purple-500 transition-all">
+                  <MessagesSquare className="w-5 h-5 text-purple-500 group-hover:text-white transition-colors" />
+                  <span className="text-sm font-semibold text-[var(--text)] group-hover:text-white transition-colors">My Posts</span>
+                </Link>
+                <Link href="/community?saved=1" className="group flex items-center gap-3 p-4 rounded-xl bg-[var(--surface2)] hover:bg-rose-500 transition-all">
+                  <Bookmark className="w-5 h-5 text-rose-500 group-hover:text-white transition-colors" />
+                  <span className="text-sm font-semibold text-[var(--text)] group-hover:text-white transition-colors">Saved Posts</span>
+                </Link>
+                <Link href="/resources?saved=1" className="group flex items-center gap-3 p-4 rounded-xl bg-[var(--surface2)] hover:bg-blue-500 transition-all">
+                  <Heart className="w-5 h-5 text-blue-500 group-hover:text-white transition-colors" />
+                  <span className="text-sm font-semibold text-[var(--text)] group-hover:text-white transition-colors">Saved Resources</span>
+                </Link>
+              </div>
+            </div>
 
-            <div className="relative z-10">
-              <div className="flex items-center gap-3.5 mb-4">
-                <div className="p-2.5 bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/40 dark:to-amber-900/40 rounded-xl text-orange-600 dark:text-orange-400 shadow-inner">
-                  <ShoppingBag className="w-6 h-6" />
+            {/* Community Highlights */}
+            <div className="bg-gradient-to-br from-[var(--surface)] to-emerald-50/30 dark:to-emerald-950/10 rounded-3xl border border-[var(--border)] p-8 shadow-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <Users className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[var(--text)] leading-none">Marketplace</h3>
-                  <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-widest">Curated Store</span>
+                  <h2 className="text-xl font-bold text-[var(--text)]">Community</h2>
+                  <p className="text-sm text-[var(--muted)]">You're not alone in this journey</p>
                 </div>
               </div>
-
-              <p className="text-sm text-[var(--muted)] mb-6 leading-relaxed">
-                Discover rated sensory toys, adaptive clothing, and tools to support your daily journey.
+              
+              <p className="text-[var(--muted)] mb-6 leading-relaxed">
+                Join thousands of parents sharing experiences, asking questions, and supporting each other through the ups and downs of parenting neurodiverse children.
               </p>
-
-              <Link
-                href="/marketplace"
-                className="group/btn relative w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 py-3.5 px-4 font-black text-amber-950 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 hover:-translate-y-0.5 transition-all overflow-hidden"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  Browse Collection <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform stroke-[3px]" />
-                </span>
-                <div className="absolute inset-0 bg-white/40 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+              
+              <Link href="/community" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all">
+                Join the Conversation
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Footer with Disclaimer */}
-      <div className="mt-20 border-t border-[var(--border)] bg-[var(--surface)] py-8">
+      {/* Footer Disclaimer */}
+      <footer className="border-t border-[var(--border)] bg-[var(--surface)] py-8">
         <div className="mx-auto max-w-7xl px-4 text-center">
-          <p className="text-[10px] text-[var(--muted)] opacity-60 leading-relaxed max-w-3xl mx-auto uppercase tracking-wide">
-            DISCLAIMER: NeuroKid is a personal project by Shashank Puli, created as an MVP for educational and demonstration purposes only.
-            The content provided is not intended to replace professional medical advice, diagnosis, or treatment.
-            Always seek the advice of a qualified health provider with any questions regarding a medical condition.
+          <p className="text-[9px] text-[var(--muted)] opacity-50 leading-relaxed max-w-3xl mx-auto">
+            NeuroKid provides general information and resources for educational purposes only. Content is not a substitute for professional medical advice, diagnosis, or treatment. Always consult qualified healthcare providers with questions about medical conditions.
           </p>
-          <p className="mt-2 text-[10px] text-[var(--muted)] opacity-40">
-            © 2026 NeuroKid.
+          <p className="mt-2 text-[9px] text-[var(--muted)] opacity-30">
+            © 2026 NeuroKid
           </p>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
