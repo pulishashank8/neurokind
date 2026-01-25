@@ -109,7 +109,32 @@ The Marketplace (`/marketplace`) is a curated shopping experience with 150+ Amaz
 - **Daily Living**: Adaptive utensils, visual timers, potty watches
 - **Tech**: Noise-cancelling headphones, GPS trackers, star projectors
 
+## Private 1:1 Direct Messaging (`/messages`)
+The platform includes a fully-featured private messaging system:
+
+### Features
+- **Conversation Management**: Create and view private conversations with other users
+- **Real-time Updates**: Messages auto-refresh every 5 seconds
+- **Split-Panel UI**: Responsive layout with conversation list + message thread
+- **Message Controls**: Soft delete your own messages
+- **User Safety**: Block/unblock users, report users for moderation
+- **Rate Limiting**: 20 messages per minute, 5 new conversations per day
+
+### Database Tables
+- `Conversation`: Stores 1:1 conversation between two users
+- `DirectMessage`: Individual messages with soft delete support
+- `BlockedUser`: Blocked user relationships
+- `MessageReport`: User reports for moderation
+- `MessageRateLimit`: Rate limit tracking
+
+### Access Points
+- Messages link in navbar under Community dropdown
+- Message button on post cards
+- Message button next to post authors on detail pages
+- Message button next to comment authors in threads
+
 ## Recent Updates (Jan 2026)
+- Added private 1:1 direct messaging with rate limiting and safety features
 - Added Breathing/Calm Tool with animated exercises
 - Created Crisis Resources page with emergency hotlines
 - Built Therapy Session Log feature with database persistence
