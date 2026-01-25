@@ -27,7 +27,8 @@ import {
   LogOut,
   Sun,
   Moon,
-  MessageCircle
+  MessageCircle,
+  Star
 } from "lucide-react";
 
 type SubItem = { href: string; label: string; icon: any; description: string };
@@ -55,6 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/calm", label: "Calm Tool", icon: Wind, description: "Breathing exercises & relaxation" },
       { href: "/crisis", label: "Crisis Help", icon: Phone, description: "Emergency resources & hotlines" },
       { href: "/therapy-log", label: "Therapy Log", icon: ClipboardList, description: "Track therapy sessions" },
+      { href: "/daily-wins", label: "Daily Wins", icon: Star, description: "Celebrate what worked today" },
       { href: "/emergency-card", label: "Emergency Cards", icon: CreditCard, description: "Printable info cards" },
     ]
   },

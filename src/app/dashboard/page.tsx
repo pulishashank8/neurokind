@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { 
   Users, Stethoscope, Brain, ClipboardCheck, ArrowRight, 
-  Heart, Wind, ClipboardList, Sparkles, Quote, ShoppingBag, Mail
+  Heart, Wind, ClipboardList, Sparkles, Quote, ShoppingBag, Mail, Star
 } from "lucide-react";
 
 const QUOTES = [
@@ -116,6 +116,7 @@ export default function DashboardPage() {
     { href: "/calm", icon: Wind, label: "Breathe & Calm", color: "text-emerald-500 bg-emerald-500/10" },
     { href: "/screening", icon: ClipboardCheck, label: "Screening", color: "text-blue-500 bg-blue-500/10" },
     { href: "/therapy-log", icon: ClipboardList, label: "Therapy Log", color: "text-purple-500 bg-purple-500/10" },
+    { href: "/daily-wins", icon: Star, label: "Daily Wins", color: "text-amber-500 bg-amber-500/10" },
   ];
 
   return (

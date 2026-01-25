@@ -65,6 +65,14 @@ These features are 100% free (no paid APIs) and designed for real-world use by f
 - View session history
 - Supports ABA, Speech, OT, and other therapy types
 
+### Daily Wins Journal (`/daily-wins`)
+- Private journal for celebrating daily successes
+- Date picker for logging wins on specific days
+- Mood tracking (1-5 emoji scale)
+- Optional categories: Therapy Progress, School Success, Social Win, Communication, Behavior, Daily Life, Milestone, Other
+- Premium amber/orange gradient design matching platform aesthetics
+- Available in Support dropdown navigation
+
 ### Emergency Info Cards (`/emergency-card`)
 - Create cards with child's name, triggers, calming strategies
 - Add emergency contacts and doctor info
@@ -79,7 +87,7 @@ These features are 100% free (no paid APIs) and designed for real-world use by f
 ## Navigation Structure
 - **Community**: Forums, Saved Posts
 - **Care Compass**: Find Care, M-CHAT-R/F Screening
-- **Support**: Calm Tool, Crisis Help, Therapy Log, Emergency Cards
+- **Support**: Calm Tool, Crisis Help, Therapy Log, Daily Wins, Emergency Cards
 - **Knowledge**: Resources, AI Companion
 - **Platform**: About, Marketplace, Trust & Safety, Settings, Sign Out
 
@@ -90,6 +98,7 @@ The dashboard has a side-by-side layout below the main module cards:
 1. **Breathe & Calm** - Animated breathing exercises
 2. **Screening** - M-CHAT developmental screening
 3. **Therapy Log** - Track therapy sessions
+4. **Daily Wins** - Celebrate what worked today
 
 **Right Section - Marketplace**:
 - Title and description about Amazon products
