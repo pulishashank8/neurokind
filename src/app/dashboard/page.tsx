@@ -274,7 +274,7 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-4">
               {/* Marketplace Card - Compact */}
               <Link href="/marketplace" className="group block">
-              <div className="relative rounded-xl p-3 sm:p-4 overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 border border-violet-100 dark:border-violet-700/40">
+              <div className="relative rounded-xl p-3 sm:p-4 overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg bg-violet-50 dark:bg-slate-800 border border-violet-100 dark:border-violet-600/50">
                 
                 {/* Soft ambient glow */}
                 <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-violet-200/30 to-transparent dark:from-violet-600/20 rounded-full blur-xl" />
@@ -319,7 +319,7 @@ export default function DashboardPage() {
             
               {/* Games Section - Compact */}
               <Link href="/games" className="group block">
-              <div className="relative rounded-xl p-3 sm:p-4 overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg bg-gradient-to-br from-sky-50 via-indigo-50 to-violet-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 border border-sky-100 dark:border-sky-700/40">
+              <div className="relative rounded-xl p-3 sm:p-4 overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg bg-sky-50 dark:bg-slate-800 border border-sky-100 dark:border-sky-600/50">
                 
                 {/* Soft ambient glow */}
                 <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-sky-200/30 to-transparent dark:from-sky-600/20 rounded-full blur-xl" />
