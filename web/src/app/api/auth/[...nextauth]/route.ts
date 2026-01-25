@@ -59,8 +59,8 @@ export const authOptions: NextAuthOptions = {
               return null;
             }
 
-            // Check email verification
-            if (!user.emailVerified) {
+            // Check email verification (skip in development mode)
+            if (!user.emailVerified && process.env.NODE_ENV === 'production') {
               logger.warn({ userId: user.id }, 'User not verified');
               throw new Error("EmailNotVerified");
             }

@@ -78,11 +78,16 @@ export const POST = withApiHandler(async (request: NextRequest) => {
   // Hash password
   const hashedPassword = await bcryptjs.hash(password, 10);
 
+  // In development, auto-verify users to skip email verification
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+
   // Create user with profile
   const user = await prisma.user.create({
     data: {
       email,
       hashedPassword,
+      emailVerified: isDevelopment,
+      emailVerifiedAt: isDevelopment ? new Date() : null,
       profile: {
         create: {
           username,
