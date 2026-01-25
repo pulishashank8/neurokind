@@ -235,10 +235,10 @@ export default function ProvidersPage() {
                   {provider.phone && (
                     <a
                       href={`tel:${provider.phone}`}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--primary)] text-white text-sm font-semibold hover:bg-[var(--primary-hover)] shadow-lg shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/30 transition-all duration-200 btn-premium"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all duration-200"
                     >
-                      <Phone className="w-4 h-4" />
-                      Call
+                      <Phone className="w-4 h-4 text-white" />
+                      <span className="text-white">Call</span>
                     </a>
                   )}
                 </div>
