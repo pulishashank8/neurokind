@@ -130,15 +130,15 @@ export default function DashboardPage() {
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Welcome Section */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-semibold mb-6">
-              <Sparkles className="w-4 h-4" />
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-4">
+              <Sparkles className="w-3.5 h-3.5" />
               Your Safe Space
             </div>
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-[var(--text)] tracking-tight mb-4">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)] tracking-tight mb-2">
               Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">{session?.user?.name || "Friend"}</span>
             </h1>
-            <p className="text-lg text-[var(--muted)] max-w-2xl mx-auto">
+            <p className="text-sm text-[var(--muted)] max-w-xl mx-auto">
               Your journey matters. Explore resources, connect with community, or find support today.
             </p>
           </div>
@@ -189,54 +189,48 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* Premium Messages Card - Full Width */}
-          <Link href="/messages" className="group block mb-6">
-            <div className="relative rounded-3xl border border-[var(--border)] p-8 sm:p-10 shadow-xl bg-gradient-to-br from-[var(--surface)] via-indigo-50/50 to-violet-50/50 dark:via-indigo-950/20 dark:to-violet-950/20 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 hover:border-indigo-300/50 dark:hover:border-indigo-500/30">
-              {/* Animated background glow */}
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-violet-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-              <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:scale-110 transition-transform duration-700"></div>
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-purple-500/10 to-indigo-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 group-hover:scale-110 transition-transform duration-700"></div>
+          {/* Messages Card - Compact */}
+          <Link href="/messages" className="group block mb-5">
+            <div className="relative rounded-2xl border border-[var(--border)] p-5 sm:p-6 shadow-lg bg-gradient-to-br from-[var(--surface)] via-indigo-50/30 to-violet-50/30 dark:via-indigo-950/10 dark:to-violet-950/10 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-0.5 hover:border-indigo-300/50 dark:hover:border-indigo-500/30">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
               
-              <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-8">
+              <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
                 {/* Icon Section */}
                 <div className="relative flex-shrink-0">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30 group-hover:scale-110 group-hover:shadow-indigo-500/50 transition-all duration-500">
-                    <Mail className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-all duration-300">
+                    <Mail className="w-7 h-7 text-white" />
                   </div>
-                  {/* Notification Badge */}
                   {notifications.totalUnread > 0 && (
-                    <div className="absolute -top-2 -right-2 min-w-[28px] h-7 px-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-bold flex items-center justify-center shadow-lg shadow-rose-500/40 animate-pulse">
+                    <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[10px] font-bold flex items-center justify-center shadow-md">
                       {notifications.totalUnread > 99 ? "99+" : notifications.totalUnread}
                     </div>
                   )}
-                  {/* Decorative ring */}
-                  <div className="absolute inset-0 w-20 h-20 sm:w-24 sm:h-24 rounded-3xl border-2 border-indigo-400/30 animate-ping opacity-20"></div>
                 </div>
                 
                 {/* Content Section */}
-                <div className="flex-1 text-center md:text-left">
-                  <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-400 dark:via-violet-400 dark:to-purple-400">
+                <div className="flex-1 text-center sm:text-left">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                    <h2 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-400 dark:via-violet-400 dark:to-purple-400">
                       Messages
                     </h2>
                     {notifications.totalUnread > 0 && (
-                      <span className="hidden sm:inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs font-bold">
+                      <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold">
                         {notifications.unreadConnectionRequests > 0 && `${notifications.unreadConnectionRequests} request${notifications.unreadConnectionRequests > 1 ? 's' : ''}`}
                         {notifications.unreadConnectionRequests > 0 && notifications.unreadMessages > 0 && ' • '}
                         {notifications.unreadMessages > 0 && `${notifications.unreadMessages} new`}
                       </span>
                     )}
                   </div>
-                  <p className="text-[var(--muted)] text-base sm:text-lg leading-relaxed max-w-xl">
-                    Connect with other parents through private, secure conversations. Share experiences, offer support, and build meaningful connections within our community.
+                  <p className="text-[var(--muted)] text-sm leading-relaxed max-w-lg">
+                    Connect with other parents through private, secure conversations.
                   </p>
                 </div>
                 
                 {/* CTA Section */}
                 <div className="flex-shrink-0">
-                  <div className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 text-white font-bold shadow-xl shadow-indigo-500/25 group-hover:shadow-indigo-500/50 group-hover:scale-105 transition-all duration-300">
+                  <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 text-white text-sm font-semibold shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 group-hover:scale-105 transition-all duration-300">
                     <span>Open Messages</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </div>
               </div>
@@ -244,30 +238,30 @@ export default function DashboardPage() {
           </Link>
 
           {/* Support Tools & Marketplace - Side by Side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Left: Support Tools */}
-            <div className="bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-6 sm:p-8 shadow-lg">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <Heart className="w-5 h-5 text-white" />
+            <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-4 sm:p-5 shadow-md">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-md shadow-emerald-500/20">
+                  <Heart className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-[var(--text)]">Support Tools</h2>
-                  <p className="text-sm text-[var(--muted)]">Free wellness resources</p>
+                  <h2 className="text-base font-bold text-[var(--text)]">Support Tools</h2>
+                  <p className="text-xs text-[var(--muted)]">Free wellness resources</p>
                 </div>
               </div>
               
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2">
                 {supportTools.map((tool) => {
                   const Icon = tool.icon;
                   return (
                     <Link key={tool.href} href={tool.href} className="group">
-                      <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--surface2)] border border-transparent hover:border-[var(--primary)]/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                        <div className={`w-12 h-12 rounded-xl ${tool.color} flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
-                          <Icon className="w-6 h-6" />
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface2)] border border-transparent hover:border-[var(--primary)]/30 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+                        <div className={`w-9 h-9 rounded-lg ${tool.color} flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0`}>
+                          <Icon className="w-4.5 h-4.5" />
                         </div>
-                        <span className="text-sm font-semibold text-[var(--text)]">{tool.label}</span>
-                        <ArrowRight className="w-4 h-4 ml-auto text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <span className="text-sm font-medium text-[var(--text)]">{tool.label}</span>
+                        <ArrowRight className="w-3.5 h-3.5 ml-auto text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </Link>
                   );
@@ -276,24 +270,24 @@ export default function DashboardPage() {
             </div>
 
             {/* Right: Marketplace */}
-            <div className="bg-gradient-to-br from-[var(--surface)] to-amber-50/30 dark:to-amber-950/10 rounded-3xl border border-[var(--border)] p-6 sm:p-8 shadow-lg flex flex-col">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                  <ShoppingBag className="w-5 h-5 text-white" />
+            <div className="bg-gradient-to-br from-[var(--surface)] to-amber-50/30 dark:to-amber-950/10 rounded-2xl border border-[var(--border)] p-4 sm:p-5 shadow-md flex flex-col">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-md shadow-amber-500/20">
+                  <ShoppingBag className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-[var(--text)]">Marketplace</h2>
-                  <p className="text-sm text-[var(--muted)]">Curated products for your family</p>
+                  <h2 className="text-base font-bold text-[var(--text)]">Marketplace</h2>
+                  <p className="text-xs text-[var(--muted)]">Curated products for your family</p>
                 </div>
               </div>
               
-              <p className="text-[var(--muted)] mb-6 leading-relaxed flex-1">
-                Discover 150+ carefully selected items including sensory toys, weighted blankets, communication tools, adaptive clothing, and more. All products available via Amazon for easy purchasing.
+              <p className="text-sm text-[var(--muted)] mb-4 leading-relaxed flex-1">
+                Discover 150+ carefully selected items including sensory toys, weighted blankets, communication tools, and more.
               </p>
               
-              <Link href="/marketplace" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:-translate-y-0.5 transition-all">
+              <Link href="/marketplace" className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-semibold shadow-md shadow-amber-500/20 hover:shadow-amber-500/35 hover:-translate-y-0.5 transition-all">
                 Browse Collection
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
