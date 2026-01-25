@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { Search, X } from "lucide-react";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -9,9 +10,11 @@ interface SearchBarProps {
 
 export function SearchBar({
   onSearch,
-  placeholder = "Search posts...",
+  placeholder = "Search discussions...",
 }: SearchBarProps) {
   const [query, setQuery] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,42 +24,44 @@ export function SearchBar({
   const handleClear = () => {
     setQuery("");
     onSearch("");
+    inputRef.current?.focus();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-full">
-      <div className="relative">
+    <form onSubmit={handleSubmit} className="relative w-full group">
+      <div 
+        className={`relative transition-all duration-300 ${
+          isFocused ? "transform scale-[1.01]" : ""
+        }`}
+      >
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           placeholder={placeholder}
-          className="w-full px-4 py-3 sm:py-4 pl-10 sm:pl-12 pr-10 bg-[var(--bg-elevated)] border border-[var(--border-light)] rounded-[var(--radius-md)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm sm:text-base min-h-[48px]"
+          className={`w-full px-5 py-3.5 pl-12 pr-12 bg-[var(--surface)] border-2 rounded-xl text-[var(--text)] placeholder-[var(--muted)] transition-all duration-300 text-sm input-premium ${
+            isFocused 
+              ? "border-[var(--primary)] shadow-lg shadow-[var(--primary)]/10" 
+              : "border-[var(--border)] hover:border-[var(--primary)]/30"
+          }`}
         />
-        <svg
-          className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
+        <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
+          isFocused ? "text-[var(--primary)]" : "text-[var(--muted)]"
+        }`}>
+          <Search className="w-5 h-5" />
+        </div>
 
         {query && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface2)] transition-all duration-200"
             aria-label="Clear search"
           >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
-            </svg>
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>

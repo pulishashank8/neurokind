@@ -1,9 +1,11 @@
 "use client";
 
+import { Sparkles, TrendingUp, Flame } from "lucide-react";
+
 interface SortOption {
   value: "new" | "top" | "hot";
   label: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 interface SortTabsProps {
@@ -12,26 +14,33 @@ interface SortTabsProps {
 }
 
 const sortOptions: SortOption[] = [
-  { value: "new", label: "Newest", icon: "✨" },
-  { value: "top", label: "Top Rated", icon: "⭐" },
-  { value: "hot", label: "Hot", icon: "🔥" },
+  { value: "new", label: "Newest", icon: <Sparkles className="w-4 h-4" /> },
+  { value: "top", label: "Top Rated", icon: <TrendingUp className="w-4 h-4" /> },
+  { value: "hot", label: "Hot", icon: <Flame className="w-4 h-4" /> },
 ];
 
 export function SortTabs({ selectedSort, onSort }: SortTabsProps) {
   return (
-    <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 -mb-2">
+    <div className="flex gap-2 p-1 bg-[var(--surface2)]/50 rounded-xl">
       {sortOptions.map((option) => (
         <button
           key={option.value}
           onClick={() => onSort(option.value)}
-          className={`min-h-[44px] px-3 sm:px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 flex-shrink-0 ${
+          className={`relative px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-300 flex items-center gap-2 ${
             selectedSort === option.value
-              ? "bg-[var(--primary)] text-white"
-              : "bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated-hover)]"
+              ? "bg-[var(--surface)] text-[var(--text)] shadow-md"
+              : "text-[var(--muted)] hover:text-[var(--text)]"
           }`}
         >
-          <span>{option.icon}</span>
+          <span className={`transition-transform duration-300 ${
+            selectedSort === option.value ? "scale-110" : ""
+          }`}>
+            {option.icon}
+          </span>
           <span>{option.label}</span>
+          {selectedSort === option.value && (
+            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[var(--primary)] rounded-full" />
+          )}
         </button>
       ))}
     </div>

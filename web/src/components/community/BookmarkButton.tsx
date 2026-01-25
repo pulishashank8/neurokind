@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Bookmark } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface BookmarkButtonProps {
@@ -16,12 +17,15 @@ export function BookmarkButton({
 }: BookmarkButtonProps) {
   const [bookmarked, setBookmarked] = useState(initialBookmarked);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPop, setShowPop] = useState(false);
 
   const handleToggle = async () => {
     if (isLoading) return;
 
     const previousBookmarked = bookmarked;
-    setBookmarked(!bookmarked); // Optimistic update
+    setBookmarked(!bookmarked);
+    setShowPop(true);
+    setTimeout(() => setShowPop(false), 300);
 
     setIsLoading(true);
 
@@ -40,7 +44,13 @@ export function BookmarkButton({
       setBookmarked(data.bookmarked);
       onToggle?.(data.bookmarked);
 
-      toast.success(data.message);
+      toast.success(data.message, {
+        style: {
+          background: 'var(--surface)',
+          color: 'var(--text)',
+          border: '1px solid var(--border)',
+        },
+      });
     } catch (error) {
       setBookmarked(previousBookmarked);
       toast.error("Failed to update bookmark");
@@ -54,30 +64,19 @@ export function BookmarkButton({
     <button
       onClick={handleToggle}
       disabled={isLoading}
-      className={`min-h-[44px] px-3 sm:px-4 rounded-[var(--radius-md)] flex items-center gap-2 transition-all ${
+      className={`p-2.5 rounded-xl flex items-center justify-center transition-all duration-200 ${
         bookmarked
-          ? "bg-[var(--accent)] text-white"
-          : "bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated-hover)]"
-      } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+          ? "bg-amber-500/10 text-amber-500"
+          : "bg-[var(--surface2)] text-[var(--muted)] hover:bg-[var(--surface2)]/80 hover:text-[var(--text)]"
+      } ${isLoading ? "opacity-50 cursor-not-allowed" : "hover:scale-105 active:scale-95"} ${
+        showPop ? "animate-vote-pop" : ""
+      }`}
       aria-label={bookmarked ? "Remove bookmark" : "Bookmark post"}
       title={bookmarked ? "Remove bookmark" : "Bookmark post"}
     >
-      <svg
-        className="w-5 h-5"
-        fill={bookmarked ? "currentColor" : "none"}
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-        />
-      </svg>
-      <span className="hidden sm:inline text-sm font-medium">
-        {bookmarked ? "Saved" : "Save"}
-      </span>
+      <Bookmark
+        className={`w-5 h-5 transition-all ${bookmarked ? "fill-current" : ""}`}
+      />
     </button>
   );
 }

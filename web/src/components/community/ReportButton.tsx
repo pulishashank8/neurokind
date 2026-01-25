@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Flag, X } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface ReportButtonProps {
@@ -51,12 +52,19 @@ export function ReportButton({ targetType, targetId }: ReportButtonProps) {
         throw new Error(data.error || "Report submission failed");
       }
 
-      toast.success(data.message);
+      toast.success(data.message, {
+        style: {
+          background: 'var(--surface)',
+          color: 'var(--text)',
+          border: '1px solid var(--border)',
+        },
+      });
       setShowDialog(false);
       setReason("");
       setDetails("");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to submit report");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to submit report";
+      toast.error(message);
       console.error("Error submitting report:", error);
     } finally {
       setIsLoading(false);
@@ -67,43 +75,52 @@ export function ReportButton({ targetType, targetId }: ReportButtonProps) {
     <>
       <button
         onClick={() => setShowDialog(true)}
-        className="min-h-[44px] px-3 sm:px-4 rounded-[var(--radius-md)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated-hover)] flex items-center gap-2 transition-all"
+        className="p-2.5 rounded-xl bg-[var(--surface2)] text-[var(--muted)] hover:bg-red-500/10 hover:text-red-500 flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
         aria-label="Report content"
         title="Report"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
-          />
-        </svg>
-        <span className="hidden sm:inline text-sm font-medium">Report</span>
+        <Flag className="w-5 h-5" />
       </button>
 
       {showDialog && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-up"
           onClick={() => setShowDialog(false)}
         >
           <div
-            className="bg-[var(--bg-surface)] rounded-[var(--radius-lg)] p-6 sm:p-8 w-full max-w-md shadow-xl"
+            className="bg-[var(--surface)] rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-[var(--border)] relative overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] mb-4">
-              Report {targetType.toLowerCase()}
-            </h2>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            
+            <button
+              onClick={() => setShowDialog(false)}
+              className="absolute top-4 right-4 p-2 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface2)] transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-red-500/10 rounded-xl">
+                <Flag className="w-6 h-6 text-red-500" />
+              </div>
               <div>
-                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                <h2 className="text-xl font-bold text-[var(--text)]">
+                  Report {targetType.toLowerCase()}
+                </h2>
+                <p className="text-sm text-[var(--muted)]">Help us keep the community safe</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-[var(--text)] mb-2">
                   Reason for reporting
                 </label>
                 <select
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="w-full px-4 py-3 bg-[var(--bg-elevated)] border border-[var(--border-light)] rounded-[var(--radius-md)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] min-h-[48px]"
+                  className="w-full px-4 py-3.5 bg-[var(--surface2)] border-2 border-[var(--border)] rounded-xl text-[var(--text)] focus:outline-none focus:border-[var(--primary)] transition-colors"
                   required
                 >
                   <option value="">Select a reason...</option>
@@ -116,33 +133,33 @@ export function ReportButton({ targetType, targetId }: ReportButtonProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                <label className="block text-sm font-medium text-[var(--text)] mb-2">
                   Additional details (optional)
                 </label>
                 <textarea
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
                   placeholder="Please provide any additional context..."
-                  className="w-full px-4 py-3 bg-[var(--bg-elevated)] border border-[var(--border-light)] rounded-[var(--radius-md)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] resize-none min-h-[120px]"
+                  className="w-full px-4 py-3 bg-[var(--surface2)] border-2 border-[var(--border)] rounded-xl text-[var(--text)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--primary)] resize-none min-h-[100px] transition-colors"
                   maxLength={1000}
                 />
-                <p className="text-xs text-[var(--text-muted)] mt-1">
-                  {details.length}/1000 characters
+                <p className="text-xs text-[var(--muted)] mt-1 text-right">
+                  {details.length}/1000
                 </p>
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row gap-3">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowDialog(false)}
-                  className="min-h-[48px] px-6 rounded-[var(--radius-md)] bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated-hover)] font-medium transition-all flex-1"
+                  className="flex-1 py-3.5 px-6 rounded-xl bg-[var(--surface2)] text-[var(--text)] hover:bg-[var(--surface2)]/80 font-semibold transition-all duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading || !reason}
-                  className="min-h-[48px] px-6 rounded-[var(--radius-md)] bg-[var(--danger)] text-white hover:opacity-90 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1"
+                  className="flex-1 py-3.5 px-6 rounded-xl bg-red-500 text-white hover:bg-red-600 font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed btn-premium shadow-lg shadow-red-500/20"
                 >
                   {isLoading ? "Submitting..." : "Submit Report"}
                 </button>
