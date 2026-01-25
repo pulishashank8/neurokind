@@ -1,6 +1,7 @@
 "use client";
 
-import { Folder, LayoutGrid } from "lucide-react";
+import { Folder, LayoutGrid, User } from "lucide-react";
+import Link from "next/link";
 
 interface Category {
   id: string;
@@ -13,25 +14,31 @@ interface CategorySidebarProps {
   categories: Category[];
   selectedId?: string;
   onSelect: (categoryId: string | undefined) => void;
+  showMyPosts?: boolean;
+  isMyPostsSelected?: boolean;
+  onMyPostsSelect?: () => void;
 }
 
 export function CategorySidebar({
   categories,
   selectedId,
   onSelect,
+  showMyPosts = true,
+  isMyPostsSelected = false,
+  onMyPostsSelect,
 }: CategorySidebarProps) {
   return (
     <nav className="space-y-1">
       <button
         onClick={() => onSelect(undefined)}
         className={`group w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-3 ${
-          !selectedId
+          !selectedId && !isMyPostsSelected
             ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20"
             : "text-[var(--muted)] hover:bg-[var(--surface2)] hover:text-[var(--text)]"
         }`}
       >
         <div className={`p-2 rounded-lg transition-colors ${
-          !selectedId 
+          !selectedId && !isMyPostsSelected 
             ? "bg-white/20" 
             : "bg-[var(--surface2)] group-hover:bg-[var(--primary)]/10"
         }`}>
@@ -39,6 +46,26 @@ export function CategorySidebar({
         </div>
         <span className="flex-1">All Categories</span>
       </button>
+
+      {showMyPosts && onMyPostsSelect && (
+        <button
+          onClick={onMyPostsSelect}
+          className={`group w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-3 ${
+            isMyPostsSelected
+              ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20"
+              : "text-[var(--muted)] hover:bg-[var(--surface2)] hover:text-[var(--text)]"
+          }`}
+        >
+          <div className={`p-2 rounded-lg transition-colors ${
+            isMyPostsSelected 
+              ? "bg-white/20" 
+              : "bg-[var(--surface2)] group-hover:bg-[var(--primary)]/10"
+          }`}>
+            <User className="w-4 h-4" />
+          </div>
+          <span className="flex-1">My Posts</span>
+        </button>
+      )}
 
       <div className="py-2">
         <div className="h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />

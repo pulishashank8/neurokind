@@ -51,11 +51,11 @@ export const GET = withApiHandler(async (request: NextRequest) => {
     );
   }
 
-  const { cursor, limit, sort, categoryId, tag, search, page } = validation.data;
+  const { cursor, limit, sort, categoryId, tag, search, page, authorId } = validation.data;
   const useCursor = !!cursor;
   const take = limit + 1; // Fetch one extra to determine if there's a next page
 
-  logger.debug({ cursor, limit, sort, categoryId, tag, search }, 'Fetching posts');
+  logger.debug({ cursor, limit, sort, categoryId, tag, search, authorId }, 'Fetching posts');
 
   // Check cache
   const cacheKeyStr = cacheKey([
@@ -65,7 +65,8 @@ export const GET = withApiHandler(async (request: NextRequest) => {
     sort || "new",
     categoryId || "all",
     tag || "all",
-    search || "all"
+    search || "all",
+    authorId || "all"
   ]);
   const cached = await getCached(cacheKeyStr, { prefix: "posts", ttl: CACHE_TTL.POSTS_FEED });
   if (cached) {
@@ -95,6 +96,10 @@ export const GET = withApiHandler(async (request: NextRequest) => {
       { title: { contains: search, mode: "insensitive" } },
       { content: { contains: search, mode: "insensitive" } },
     ];
+  }
+
+  if (authorId) {
+    where.authorId = authorId;
   }
 
   // Parse cursor for pagination

@@ -49,6 +49,7 @@ function CommunityPageContent() {
   );
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [page, setPage] = useState(1);
+  const [showMyPosts, setShowMyPosts] = useState(searchParams.get("myPosts") === "true");
 
   // Fetch categories - MUST be called before any conditional returns
   const { data: categoriesData } = useQuery({
@@ -62,7 +63,7 @@ function CommunityPageContent() {
 
   // Fetch posts - MUST be called before any conditional returns
   const { data: postsData, isLoading, isError } = useQuery({
-    queryKey: ["posts", page, sort, selectedCategory, searchQuery],
+    queryKey: ["posts", page, sort, selectedCategory, searchQuery, showMyPosts, session?.user?.id],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -70,6 +71,7 @@ function CommunityPageContent() {
         sort,
         ...(selectedCategory && { categoryId: selectedCategory }),
         ...(searchQuery && { search: searchQuery }),
+        ...(showMyPosts && session?.user?.id && { authorId: session.user.id }),
       });
       const res = await fetch(`/api/posts?${params}`);
       return res.json();
@@ -82,9 +84,22 @@ function CommunityPageContent() {
     const params = new URLSearchParams();
     if (selectedCategory) params.set("category", selectedCategory);
     if (searchQuery) params.set("search", searchQuery);
+    if (showMyPosts) params.set("myPosts", "true");
     const newUrl = params.toString() ? `/community?${params}` : "/community";
     router.replace(newUrl, { scroll: false });
-  }, [selectedCategory, searchQuery, router]);
+  }, [selectedCategory, searchQuery, showMyPosts, router]);
+
+  const handleMyPostsSelect = useCallback(() => {
+    setShowMyPosts(true);
+    setSelectedCategory(undefined);
+    setPage(1);
+  }, []);
+
+  const handleCategorySelect = useCallback((categoryId: string | undefined) => {
+    setSelectedCategory(categoryId);
+    setShowMyPosts(false);
+    setPage(1);
+  }, []);
 
   // Redirect to login if not authenticated - AFTER all hooks
   useEffect(() => {
@@ -140,11 +155,18 @@ function CommunityPageContent() {
               </p>
             </div>
 
-            <Link href="/community/new" className="hidden sm:block flex-shrink-0">
-              <button className="flex items-center gap-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-6 py-3 font-semibold shadow-lg shadow-[var(--primary)]/25 hover:shadow-[var(--primary)]/40 hover:-translate-y-0.5 transition-all">
-                ✨ Start Discussion
-              </button>
-            </Link>
+            <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
+              <Link href="/messages">
+                <button className="flex items-center gap-2 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface2)] text-[var(--text)] px-5 py-3 font-semibold border border-[var(--border)] hover:-translate-y-0.5 transition-all">
+                  💬 Messages
+                </button>
+              </Link>
+              <Link href="/community/new">
+                <button className="flex items-center gap-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-6 py-3 font-semibold shadow-lg shadow-[var(--primary)]/25 hover:shadow-[var(--primary)]/40 hover:-translate-y-0.5 transition-all">
+                  ✨ Start Discussion
+                </button>
+              </Link>
+            </div>
           </div>
 
           <div className="bg-[var(--surface)]/80 backdrop-blur-md rounded-2xl border border-[var(--border)] p-4 shadow-sm">
@@ -177,7 +199,10 @@ function CommunityPageContent() {
                 <CategorySidebar
                   categories={categories}
                   selectedId={selectedCategory}
-                  onSelect={setSelectedCategory}
+                  onSelect={handleCategorySelect}
+                  showMyPosts={true}
+                  isMyPostsSelected={showMyPosts}
+                  onMyPostsSelect={handleMyPostsSelect}
                 />
               </div>
             </div>
@@ -342,7 +367,13 @@ function CommunityPageContent() {
             categories={categories}
             selectedId={selectedCategory}
             onSelect={(categoryId) => {
-              setSelectedCategory(categoryId);
+              handleCategorySelect(categoryId);
+              setShowFiltersDrawer(false);
+            }}
+            showMyPosts={true}
+            isMyPostsSelected={showMyPosts}
+            onMyPostsSelect={() => {
+              handleMyPostsSelect();
               setShowFiltersDrawer(false);
             }}
           />

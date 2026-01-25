@@ -28,6 +28,7 @@ export const getPostsSchema = z.object({
   categoryId: z.string().min(1).optional(),
   tag: z.string().min(1).optional(),
   search: z.string().max(200).trim().optional(),
+  authorId: z.string().min(1).optional(), // Filter by author
   // Keep page for backward compatibility
   page: z.coerce.number().int().positive().default(1).optional(),
 }).strict();
