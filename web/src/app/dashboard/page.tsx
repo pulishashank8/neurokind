@@ -94,9 +94,8 @@ export default function DashboardPage() {
 
   const supportTools = [
     { href: "/calm", icon: Wind, label: "Breathe & Calm", color: "text-emerald-500 bg-emerald-500/10" },
-    { href: "/screening", icon: ClipboardCheck, label: "Next Screening", color: "text-blue-500 bg-blue-500/10" },
+    { href: "/screening", icon: ClipboardCheck, label: "Screening", color: "text-blue-500 bg-blue-500/10" },
     { href: "/therapy-log", icon: ClipboardList, label: "Therapy Log", color: "text-purple-500 bg-purple-500/10" },
-    { href: "/marketplace", icon: ShoppingBag, label: "Marketplace", color: "text-amber-500 bg-amber-500/10" },
   ];
 
   return (
@@ -170,55 +169,59 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* Support Tools Quick Access */}
-          <div className="bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-8 shadow-lg mb-12">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <Heart className="w-5 h-5 text-white" />
+          {/* Support Tools & Marketplace - Side by Side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left: Support Tools */}
+            <div className="bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-6 sm:p-8 shadow-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <Heart className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--text)]">Support Tools</h2>
+                  <p className="text-sm text-[var(--muted)]">Free wellness resources</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-[var(--text)]">Support Tools</h2>
-                <p className="text-sm text-[var(--muted)]">Free wellness resources for your family</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {supportTools.map((tool) => {
-                const Icon = tool.icon;
-                return (
-                  <Link key={tool.href} href={tool.href} className="group">
-                    <div className="flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--surface2)] border border-transparent hover:border-[var(--primary)]/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${tool.color} flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
-                        <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+              
+              <div className="flex flex-col gap-3">
+                {supportTools.map((tool) => {
+                  const Icon = tool.icon;
+                  return (
+                    <Link key={tool.href} href={tool.href} className="group">
+                      <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--surface2)] border border-transparent hover:border-[var(--primary)]/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                        <div className={`w-12 h-12 rounded-xl ${tool.color} flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
+                          <Icon className="w-6 h-6" />
+                        </div>
+                        <span className="text-sm font-semibold text-[var(--text)]">{tool.label}</span>
+                        <ArrowRight className="w-4 h-4 ml-auto text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <span className="text-sm font-semibold text-[var(--text)]">{tool.label}</span>
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Community Highlights */}
-          <div className="bg-gradient-to-br from-[var(--surface)] to-emerald-50/30 dark:to-emerald-950/10 rounded-3xl border border-[var(--border)] p-8 shadow-lg">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <Users className="w-5 h-5 text-white" />
+            {/* Right: Marketplace */}
+            <div className="bg-gradient-to-br from-[var(--surface)] to-amber-50/30 dark:to-amber-950/10 rounded-3xl border border-[var(--border)] p-6 sm:p-8 shadow-lg flex flex-col">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                  <ShoppingBag className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--text)]">Marketplace</h2>
+                  <p className="text-sm text-[var(--muted)]">Curated products for your family</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-[var(--text)]">Community</h2>
-                <p className="text-sm text-[var(--muted)]">You're not alone in this journey</p>
-              </div>
+              
+              <p className="text-[var(--muted)] mb-6 leading-relaxed flex-1">
+                Discover 150+ carefully selected items including sensory toys, weighted blankets, communication tools, adaptive clothing, and more. All products available via Amazon for easy purchasing.
+              </p>
+              
+              <Link href="/marketplace" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:-translate-y-0.5 transition-all">
+                Browse Collection
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
-            
-            <p className="text-[var(--muted)] mb-6 leading-relaxed">
-              Join thousands of parents sharing experiences, asking questions, and supporting each other through the ups and downs of parenting neurodiverse children.
-            </p>
-            
-            <Link href="/community" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all">
-              Join the Conversation
-              <ArrowRight className="w-4 h-4" />
-            </Link>
           </div>
         </div>
       </div>

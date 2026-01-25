@@ -84,12 +84,18 @@ These features are 100% free (no paid APIs) and designed for real-world use by f
 - **Knowledge**: Resources, AI Companion
 - **Platform**: About, Marketplace, Trust & Safety, Settings, Sign Out
 
-## Dashboard Support Tools
-Four quick-access tools on the dashboard:
+## Dashboard Layout
+The dashboard has a side-by-side layout below the main module cards:
+
+**Left Section - Support Tools** (stacked vertically):
 1. **Breathe & Calm** - Animated breathing exercises
-2. **Next Screening** - M-CHAT developmental screening
+2. **Screening** - M-CHAT developmental screening
 3. **Therapy Log** - Track therapy sessions
-4. **Marketplace** - 150+ Amazon product links for autism essentials
+
+**Right Section - Marketplace**:
+- Title and description about Amazon products
+- "Browse Collection" button linking to 150+ products
+- Responsive: stacks on mobile, side-by-side on tablet+
 
 ## Marketplace
 The Marketplace (`/marketplace`) is a curated shopping experience with 150+ Amazon product links across categories:
