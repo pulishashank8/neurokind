@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================
    NEUROKID TOKEN-BASED DESIGN SYSTEM
    Production-ready, sensory-friendly, accessible
