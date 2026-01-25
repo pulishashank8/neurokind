@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     'https://*.replit.dev',
     'https://*.janeway.replit.dev',
+    'https://*.kirk.replit.dev',
   ],
   images: {
     remotePatterns: [
