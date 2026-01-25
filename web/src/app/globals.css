@@ -97,9 +97,9 @@ html.dark {
   --border: rgba(48, 54, 61, 0.5);
 
   /* Primary (Bright Emerald - Fresh & Hopeful on dark!) */
-  --primary: #34d399;
-  --primary-hover: #6ee7b7;
-  --primary-foreground: #0d1117;
+  --primary: #059669;
+  --primary-hover: #10b981;
+  --primary-foreground: #FFFFFF;
 
   /* Focus & Interaction */
   --focus-ring: rgba(52, 211, 153, 0.6);
