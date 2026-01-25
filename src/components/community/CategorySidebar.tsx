@@ -1,6 +1,6 @@
 "use client";
 
-import { Folder, LayoutGrid, User } from "lucide-react";
+import { Folder, LayoutGrid, User, Heart } from "lucide-react";
 import Link from "next/link";
 
 interface Category {
@@ -17,6 +17,9 @@ interface CategorySidebarProps {
   showMyPosts?: boolean;
   isMyPostsSelected?: boolean;
   onMyPostsSelect?: () => void;
+  showMyLikes?: boolean;
+  isMyLikesSelected?: boolean;
+  onMyLikesSelect?: () => void;
 }
 
 export function CategorySidebar({
@@ -26,19 +29,22 @@ export function CategorySidebar({
   showMyPosts = true,
   isMyPostsSelected = false,
   onMyPostsSelect,
+  showMyLikes = true,
+  isMyLikesSelected = false,
+  onMyLikesSelect,
 }: CategorySidebarProps) {
   return (
     <nav className="space-y-1">
       <button
         onClick={() => onSelect(undefined)}
         className={`group w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-3 ${
-          !selectedId && !isMyPostsSelected
+          !selectedId && !isMyPostsSelected && !isMyLikesSelected
             ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20"
             : "text-[var(--muted)] hover:bg-[var(--surface2)] hover:text-[var(--text)]"
         }`}
       >
         <div className={`p-2 rounded-lg transition-colors ${
-          !selectedId && !isMyPostsSelected 
+          !selectedId && !isMyPostsSelected && !isMyLikesSelected
             ? "bg-white/20" 
             : "bg-[var(--surface2)] group-hover:bg-[var(--primary)]/10"
         }`}>
@@ -64,6 +70,26 @@ export function CategorySidebar({
             <User className="w-4 h-4" />
           </div>
           <span className="flex-1">My Posts</span>
+        </button>
+      )}
+
+      {showMyLikes && onMyLikesSelect && (
+        <button
+          onClick={onMyLikesSelect}
+          className={`group w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-3 ${
+            isMyLikesSelected
+              ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20"
+              : "text-[var(--muted)] hover:bg-[var(--surface2)] hover:text-[var(--text)]"
+          }`}
+        >
+          <div className={`p-2 rounded-lg transition-colors ${
+            isMyLikesSelected 
+              ? "bg-white/20" 
+              : "bg-[var(--surface2)] group-hover:bg-[var(--primary)]/10"
+          }`}>
+            <Heart className="w-4 h-4" />
+          </div>
+          <span className="flex-1">My Likes</span>
         </button>
       )}
 

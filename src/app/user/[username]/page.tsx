@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { User, UserPlus, Check, Clock, ArrowLeft, MessageCircle, FileText, ThumbsUp, Bookmark, Loader2 } from "lucide-react";
+import { User, UserPlus, Check, Clock, ArrowLeft, MessageCircle, FileText, Heart, Bookmark, Loader2 } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -28,7 +28,7 @@ interface Post {
   upvotes?: number;
 }
 
-type TabType = "posts" | "upvoted" | "saved";
+type TabType = "posts" | "likes" | "saved";
 
 export default function UserProfilePage({
   params,
@@ -45,10 +45,10 @@ export default function UserProfilePage({
   const [showMessageInput, setShowMessageInput] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("posts");
   const [posts, setPosts] = useState<Post[]>([]);
-  const [upvotedPosts, setUpvotedPosts] = useState<Post[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
-  const [upvotedLoading, setUpvotedLoading] = useState(false);
+  const [likesLoading, setLikesLoading] = useState(false);
   const [savedLoading, setSavedLoading] = useState(false);
   
   const { data: session, status: sessionStatus } = useSession();
@@ -115,26 +115,26 @@ export default function UserProfilePage({
   }, [isOwnProfile, activeTab]);
 
   useEffect(() => {
-    if (!profile || activeTab !== "upvoted" || !isOwnProfile) return;
-    if (upvotedPosts.length > 0) return;
+    if (!profile || activeTab !== "likes" || !isOwnProfile) return;
+    if (likedPosts.length > 0) return;
     
-    const fetchUpvoted = async () => {
-      setUpvotedLoading(true);
+    const fetchLiked = async () => {
+      setLikesLoading(true);
       try {
         const res = await fetch(`/api/users/${encodeURIComponent(username)}/upvoted`);
         if (res.ok) {
           const data = await res.json();
-          setUpvotedPosts(data.posts || []);
+          setLikedPosts(data.posts || []);
         }
       } catch (err) {
-        console.error("Failed to fetch upvoted posts:", err);
+        console.error("Failed to fetch liked posts:", err);
       } finally {
-        setUpvotedLoading(false);
+        setLikesLoading(false);
       }
     };
 
-    fetchUpvoted();
-  }, [profile, activeTab, username, upvotedPosts.length, isOwnProfile]);
+    fetchLiked();
+  }, [profile, activeTab, username, likedPosts.length, isOwnProfile]);
 
   useEffect(() => {
     if (!profile || activeTab !== "saved" || !isOwnProfile) return;
@@ -415,15 +415,15 @@ export default function UserProfilePage({
             {isOwnProfile && (
               <>
                 <button
-                  onClick={() => setActiveTab("upvoted")}
+                  onClick={() => setActiveTab("likes")}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
-                    activeTab === "upvoted"
+                    activeTab === "likes"
                       ? "text-[var(--primary)] border-b-2 border-[var(--primary)] -mb-px"
                       : "text-[var(--muted)] hover:text-[var(--text)]"
                   }`}
                 >
-                  <ThumbsUp className="w-4 h-4" />
-                  Upvoted
+                  <Heart className="w-4 h-4" />
+                  My Likes
                 </button>
                 <button
                   onClick={() => setActiveTab("saved")}
@@ -441,7 +441,7 @@ export default function UserProfilePage({
           </div>
 
           {activeTab === "posts" && renderPostsList(posts, postsLoading, "No posts yet")}
-          {activeTab === "upvoted" && isOwnProfile && renderPostsList(upvotedPosts, upvotedLoading, "No upvoted posts yet")}
+          {activeTab === "likes" && isOwnProfile && renderPostsList(likedPosts, likesLoading, "No liked posts yet")}
           {activeTab === "saved" && isOwnProfile && renderPostsList(savedPosts, savedLoading, "No saved posts yet")}
         </div>
       </div>

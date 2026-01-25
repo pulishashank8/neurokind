@@ -50,6 +50,8 @@ function CommunityPageContent() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [page, setPage] = useState(1);
   const [showMyPosts, setShowMyPosts] = useState(searchParams.get("myPosts") === "true");
+  const [showMyLikes, setShowMyLikes] = useState(searchParams.get("myLikes") === "true");
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
 
   // Fetch categories - MUST be called before any conditional returns
   const { data: categoriesData } = useQuery({
@@ -79,18 +81,49 @@ function CommunityPageContent() {
     enabled: !!session, // Only fetch when authenticated
   });
 
+  // Fetch liked posts when "My Likes" is selected
+  useEffect(() => {
+    if (showMyLikes && session?.user) {
+      const fetchLikedPosts = async () => {
+        try {
+          const userId = (session.user as { id: string }).id;
+          const username = (session.user as { username?: string }).username;
+          if (username) {
+            const res = await fetch(`/api/users/${encodeURIComponent(username)}/upvoted`);
+            if (res.ok) {
+              const data = await res.json();
+              setLikedPosts(data.posts || []);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch liked posts:", err);
+        }
+      };
+      fetchLikedPosts();
+    }
+  }, [showMyLikes, session]);
+
   // Update URL params
   useEffect(() => {
     const params = new URLSearchParams();
     if (selectedCategory) params.set("category", selectedCategory);
     if (searchQuery) params.set("search", searchQuery);
     if (showMyPosts) params.set("myPosts", "true");
+    if (showMyLikes) params.set("myLikes", "true");
     const newUrl = params.toString() ? `/community?${params}` : "/community";
     router.replace(newUrl, { scroll: false });
-  }, [selectedCategory, searchQuery, showMyPosts, router]);
+  }, [selectedCategory, searchQuery, showMyPosts, showMyLikes, router]);
 
   const handleMyPostsSelect = useCallback(() => {
     setShowMyPosts(true);
+    setShowMyLikes(false);
+    setSelectedCategory(undefined);
+    setPage(1);
+  }, []);
+
+  const handleMyLikesSelect = useCallback(() => {
+    setShowMyLikes(true);
+    setShowMyPosts(false);
     setSelectedCategory(undefined);
     setPage(1);
   }, []);
@@ -98,6 +131,7 @@ function CommunityPageContent() {
   const handleCategorySelect = useCallback((categoryId: string | undefined) => {
     setSelectedCategory(categoryId);
     setShowMyPosts(false);
+    setShowMyLikes(false);
     setPage(1);
   }, []);
 
@@ -116,7 +150,8 @@ function CommunityPageContent() {
 
   // Compute derived values
   const categories: Category[] = categoriesData?.categories || [];
-  const posts: Post[] = postsData?.posts || [];
+  const fetchedPosts: Post[] = postsData?.posts || [];
+  const displayPosts: Post[] = showMyLikes ? likedPosts : fetchedPosts;
   const pagination = postsData?.pagination;
 
   // Show loading while checking authentication
@@ -203,6 +238,9 @@ function CommunityPageContent() {
                   showMyPosts={true}
                   isMyPostsSelected={showMyPosts}
                   onMyPostsSelect={handleMyPostsSelect}
+                  showMyLikes={true}
+                  isMyLikesSelected={showMyLikes}
+                  onMyLikesSelect={handleMyLikesSelect}
                 />
               </div>
             </div>
@@ -226,7 +264,7 @@ function CommunityPageContent() {
               />
             )}
 
-            {!isLoading && !isError && posts.length === 0 && (
+            {!isLoading && !isError && displayPosts.length === 0 && (
               <EmptyState
                 icon="📝"
                 title="No posts yet"
@@ -242,10 +280,10 @@ function CommunityPageContent() {
               />
             )}
 
-            {!isLoading && !isError && posts.length > 0 && (
+            {!isLoading && !isError && displayPosts.length > 0 && (
               <>
                 <div className="grid gap-4">
-                  {posts.map((post) => (
+                  {displayPosts.map((post) => (
                     <PostCard key={post.id} post={post} />
                   ))}
                 </div>
@@ -374,6 +412,12 @@ function CommunityPageContent() {
             isMyPostsSelected={showMyPosts}
             onMyPostsSelect={() => {
               handleMyPostsSelect();
+              setShowFiltersDrawer(false);
+            }}
+            showMyLikes={true}
+            isMyLikesSelected={showMyLikes}
+            onMyLikesSelect={() => {
+              handleMyLikesSelect();
               setShowFiltersDrawer(false);
             }}
           />
