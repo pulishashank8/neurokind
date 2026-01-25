@@ -1,7 +1,4 @@
 {
   "version": 2,
-  "framework": "nextjs",
-  "buildCommand": "npx prisma generate && npm run build",
-  "installCommand": "npm install",
-  "outputDirectory": ".next"
+  "buildCommand": "npx prisma generate && npm run build"
 }
