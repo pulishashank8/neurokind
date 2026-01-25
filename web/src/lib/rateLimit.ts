@@ -191,6 +191,11 @@ export const RATE_LIMITERS = {
   readComments: new RateLimiter("readComments", 100, 60), // 100/min per IP
   readPost: new RateLimiter("readPost", 200, 60), // 200/min per IP
   updateProfile: new RateLimiter("updateProfile", 10, 60), // 10/min per user
+  connectionRequest: new RateLimiter("connectionRequest", 10, 60), // 10/min per user
+  userSearch: new RateLimiter("userSearch", 30, 60), // 30/min per user
+  userProfile: new RateLimiter("userProfile", 60, 60), // 60/min per IP
+  forgotPassword: new RateLimiter("forgotPassword", 3, 300), // 3 per 5 min per email
+  forgotPasswordDaily: new RateLimiter("forgotPasswordDaily", 5, 86400), // 5/day per email
 };
 
 /**

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { RATE_LIMITERS, getClientIp, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function GET(
   request: NextRequest,
@@ -9,6 +10,18 @@ export async function GET(
 ) {
   try {
     const { username } = await context.params;
+
+    const ip = getClientIp(request);
+    const canView = await RATE_LIMITERS.userProfile.checkLimit(ip);
+    if (!canView) {
+      const retryAfter = await RATE_LIMITERS.userProfile.getRetryAfter(ip);
+      return rateLimitResponse(retryAfter);
+    }
+
+    if (!username || username.length < 2 || username.length > 50 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+      return NextResponse.json({ error: "Invalid username format" }, { status: 400 });
+    }
+
     const session = await getServerSession(authOptions);
 
     const profile = await prisma.profile.findUnique({

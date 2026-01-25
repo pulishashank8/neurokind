@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const verified = searchParams.get("verified");
     const sortBy = searchParams.get("sortBy");
     const limitParam = searchParams.get("limit");
-    const limit = limitParam ? parseInt(limitParam) : undefined;
+    const limit = Math.min(limitParam ? parseInt(limitParam) : 50, 100); // Default 50, max 100
 
     const where: any = {};
 

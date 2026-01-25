@@ -3,6 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { checkProfileComplete } from "@/lib/auth-utils";
+import { RATE_LIMITERS, rateLimitResponse } from "@/lib/rateLimit";
+import { z } from "zod";
+
+const connectionRequestSchema = z.object({
+  receiverId: z.string().min(1, "Receiver ID is required"),
+  message: z.string().max(300, "Message too long").optional(),
+}).strict();
 
 export async function GET(request: Request) {
   try {
@@ -11,7 +18,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
+    const userId = (session.user as { id: string }).id;
+
+    const canFetch = await RATE_LIMITERS.connectionRequest.checkLimit(userId);
+    if (!canFetch) {
+      const retryAfter = await RATE_LIMITERS.connectionRequest.getRetryAfter(userId);
+      return rateLimitResponse(retryAfter);
+    }
 
     const isProfileComplete = await checkProfileComplete(userId);
     if (!isProfileComplete) {
@@ -20,6 +33,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "all";
+    const LIMIT = 50; // Safety limit for connection lists
 
     if (type === "pending-received") {
       const requests = await prisma.connectionRequest.findMany({
@@ -35,6 +49,7 @@ export async function GET(request: Request) {
           },
         },
         orderBy: { createdAt: "desc" },
+        take: LIMIT,
       });
 
       return NextResponse.json({
@@ -66,6 +81,7 @@ export async function GET(request: Request) {
           },
         },
         orderBy: { createdAt: "desc" },
+        take: LIMIT,
       });
 
       return NextResponse.json({
@@ -96,6 +112,7 @@ export async function GET(request: Request) {
           receiver: { include: { profile: true } },
         },
         orderBy: { respondedAt: "desc" },
+        take: LIMIT,
       });
 
       const connections = acceptedRequests.map((r) => {
@@ -129,18 +146,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const senderId = (session.user as any).id;
+    const senderId = (session.user as { id: string }).id;
+
+    const canRequest = await RATE_LIMITERS.connectionRequest.checkLimit(senderId);
+    if (!canRequest) {
+      const retryAfter = await RATE_LIMITERS.connectionRequest.getRetryAfter(senderId);
+      return rateLimitResponse(retryAfter);
+    }
 
     const isProfileComplete = await checkProfileComplete(senderId);
     if (!isProfileComplete) {
       return NextResponse.json({ error: "Please complete your profile first" }, { status: 403 });
     }
 
-    const { receiverId, message } = await request.json();
-
-    if (!receiverId) {
-      return NextResponse.json({ error: "Receiver ID is required" }, { status: 400 });
+    const body = await request.json();
+    const validation = connectionRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: validation.error.errors },
+        { status: 400 }
+      );
     }
+
+    const { receiverId, message } = validation.data;
 
     if (senderId === receiverId) {
       return NextResponse.json({ error: "Cannot connect with yourself" }, { status: 400 });

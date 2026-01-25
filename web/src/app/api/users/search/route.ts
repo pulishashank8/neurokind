@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { checkProfileComplete } from "@/lib/auth-utils";
+import { RATE_LIMITERS, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function GET(request: Request) {
   try {
@@ -11,7 +12,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
+    const userId = (session.user as { id: string }).id;
+
+    const canSearch = await RATE_LIMITERS.userSearch.checkLimit(userId);
+    if (!canSearch) {
+      const retryAfter = await RATE_LIMITERS.userSearch.getRetryAfter(userId);
+      return rateLimitResponse(retryAfter);
+    }
 
     const isProfileComplete = await checkProfileComplete(userId);
     if (!isProfileComplete) {

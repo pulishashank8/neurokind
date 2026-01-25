@@ -65,7 +65,7 @@ export const GET = withApiHandler(async (
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // Fetch all comments for the post
+    // Fetch comments for the post with safety limit
     const comments = await prisma.comment.findMany({
       where: {
         postId: id,
@@ -87,6 +87,7 @@ export const GET = withApiHandler(async (
       orderBy: {
         createdAt: "asc",
       },
+      take: 500, // Safety limit for threaded comments
     });
 
     // Build threaded structure
@@ -136,7 +137,7 @@ export const GET = withApiHandler(async (
   } catch (error: any) {
     console.error("Error fetching comments:", error);
     return NextResponse.json(
-      { error: "Internal Server Error", details: error.message },
+      { error: "Failed to load comments" },
       { status: 500 }
     );
   }
@@ -209,8 +210,7 @@ export async function POST(
   } catch (outerError: any) {
     console.error("CRITICAL COMMENT ERROR:", outerError);
     return NextResponse.json({
-      error: "Critical Server Error",
-      message: outerError.message || "Failed to create comment"
+      error: "Failed to create comment"
     }, { status: 500 });
   }
 }
