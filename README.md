@@ -345,7 +345,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Documentation:** [/docs](./docs/) directory
 - **Issues:** [GitHub Issues](https://github.com/pulishashank8/neurokid/issues)
-- **Email:** support@neurokid.help
+- **Email:** pulishashank8@gmail.com
 - **Website:** [www.neurokid.help](https://www.neurokid.help)
 
 ---
