@@ -1,7 +1,9 @@
-"use client";
-
+import { cookies } from 'next/headers';
 import BookmarksClient from './BookmarksClient';
 
-export default function BookmarksPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function BookmarksPage() {
+  await cookies();
   return <BookmarksClient />;
 }

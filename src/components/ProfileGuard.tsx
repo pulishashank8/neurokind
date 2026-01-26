@@ -17,6 +17,7 @@ const PUBLIC_PATHS = [
   "/terms",
   "/about",
   "/crisis",
+  "/owner",
 ];
 
 export function ProfileGuard({ children }: { children: React.ReactNode }) {

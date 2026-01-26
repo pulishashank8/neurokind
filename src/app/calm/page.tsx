@@ -1,7 +1,9 @@
-"use client";
-
+import { cookies } from 'next/headers';
 import CalmClient from './CalmClient';
 
-export default function CalmPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function CalmPage() {
+  await cookies();
   return <CalmClient />;
 }
