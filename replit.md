@@ -109,18 +109,44 @@ Preferred communication style: Simple, everyday language.
 - **Test Database**: Separate PostgreSQL database for isolated testing
 - Uses `prisma db push` for test schema management
 
-### Python Background Tasks
+### Python Backend (FastAPI)
 - **Location**: `python_tasks/` directory
-- **Runtime**: Python 3.11 with schedule, psycopg2, requests
-- **Scheduled Tasks**:
-  - Audit log cleanup (daily at 2:00 AM)
-  - Analytics processing (daily at 3:00 AM)
-  - Pending notifications (every 15 minutes)
-  - Health check (every 5 minutes)
-- **Task Modules**:
-  - `tasks/database.py`: Database cleanup and maintenance
-  - `tasks/analytics.py`: User engagement analytics
-  - `tasks/notifications.py`: Email notification processing
+- **Runtime**: Python 3.11 with FastAPI, uvicorn, psycopg2
+- **API Port**: 8000 (internal)
+- **API Docs**: http://localhost:8000/docs (Swagger UI)
+
+#### Python API Endpoints (~40% of backend):
+- **Users API** (`/api/python/users`):
+  - List users with pagination and search
+  - Get user details and activity
+  - Delete/anonymize users (GDPR)
+- **Analytics API** (`/api/python/analytics`):
+  - Dashboard statistics
+  - Activity timeline
+  - Top contributors
+  - Engagement metrics
+  - Category and growth stats
+- **Posts API** (`/api/python/posts`):
+  - List and moderate posts
+  - Trending and flagged posts
+  - Pin/lock/status updates
+- **Governance API** (`/api/python/governance`):
+  - Audit log management
+  - User data export (GDPR)
+  - Retention statistics
+  - Data cleanup operations
+  - Data catalog
+
+#### Scheduled Background Tasks:
+- Audit log cleanup (daily at 2:00 AM)
+- Analytics processing (daily at 3:00 AM)
+- Pending notifications (every 15 minutes)
+- Health check (every 5 minutes)
+
+#### Task Modules:
+- `tasks/database.py`: Database cleanup and maintenance
+- `tasks/analytics.py`: User engagement analytics
+- `tasks/notifications.py`: Email notification processing
 
 ### Deployment
 - **Vercel**: Primary deployment target (configured in `vercel.json`)
