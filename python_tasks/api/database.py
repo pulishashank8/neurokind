@@ -1,20 +1,60 @@
-"""Database connection and models for FastAPI"""
+"""Database connection and models for FastAPI
+Production-ready with connection pooling for 100K+ users
+"""
 
 import os
+import logging
 from contextlib import contextmanager
 from typing import Optional, List, Dict, Any
 import psycopg2
+from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
+
+logger = logging.getLogger('python_api.database')
 
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 
+connection_pool: Optional[pool.ThreadedConnectionPool] = None
+
+def init_connection_pool(min_conn: int = 2, max_conn: int = 20):
+    """Initialize the connection pool for production use"""
+    global connection_pool
+    if connection_pool is None:
+        try:
+            connection_pool = pool.ThreadedConnectionPool(
+                minconn=min_conn,
+                maxconn=max_conn,
+                dsn=DATABASE_URL
+            )
+            logger.info(f"Database connection pool initialized (min={min_conn}, max={max_conn})")
+        except Exception as e:
+            logger.error(f"Failed to initialize connection pool: {e}")
+            raise
+
 def get_connection():
-    """Get a database connection"""
+    """Get a database connection from pool or create new one"""
+    global connection_pool
+    if connection_pool:
+        return connection_pool.getconn()
     return psycopg2.connect(DATABASE_URL)
+
+def release_connection(conn):
+    """Release connection back to pool"""
+    global connection_pool
+    if connection_pool:
+        try:
+            connection_pool.putconn(conn)
+        except Exception:
+            pass
+    else:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 @contextmanager
 def get_db():
-    """Database connection context manager"""
+    """Database connection context manager with pooling support"""
     conn = get_connection()
     try:
         yield conn
@@ -23,7 +63,7 @@ def get_db():
         conn.rollback()
         raise
     finally:
-        conn.close()
+        release_connection(conn)
 
 def execute_query(query: str, params: tuple = None, fetch_one: bool = False) -> Any:
     """Execute a query and return results"""
@@ -31,7 +71,8 @@ def execute_query(query: str, params: tuple = None, fetch_one: bool = False) -> 
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute(query, params)
         if fetch_one:
-            return dict(cursor.fetchone()) if cursor.rowcount > 0 else None
+            result = cursor.fetchone()
+            return dict(result) if result else None
         return [dict(row) for row in cursor.fetchall()]
 
 def execute_write(query: str, params: tuple = None) -> int:
@@ -40,6 +81,11 @@ def execute_write(query: str, params: tuple = None) -> int:
         cursor = conn.cursor()
         cursor.execute(query, params)
         return cursor.rowcount
+
+try:
+    init_connection_pool()
+except Exception as e:
+    logger.warning(f"Connection pool not initialized, using direct connections: {e}")
 
 
 class UserRepository:

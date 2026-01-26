@@ -1,9 +1,10 @@
-"""Analytics API routes"""
+"""Analytics API routes with caching for performance"""
 
 from fastapi import APIRouter, Query
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import date
+from api.cache import cached
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -42,7 +43,12 @@ class EngagementMetrics(BaseModel):
 
 @router.get("/dashboard", response_model=DashboardStats)
 async def get_dashboard_stats():
-    """Get main dashboard statistics"""
+    """Get main dashboard statistics (cached for 60 seconds)"""
+    from api.database import AnalyticsRepository
+    return _get_cached_dashboard_stats()
+
+@cached(ttl=60, key_prefix="analytics")
+def _get_cached_dashboard_stats():
     from api.database import AnalyticsRepository
     return AnalyticsRepository.get_dashboard_stats()
 

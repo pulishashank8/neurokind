@@ -1,54 +1,96 @@
 """
 NeuroKid Python Backend API
 FastAPI-based backend service handling analytics, data governance, and admin features
+Production-ready with security hardening for 100K+ users
 """
 
 import os
 import logging
+import uuid
 from datetime import datetime
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from typing import Optional
+
+IS_PRODUCTION = os.environ.get('NODE_ENV') == 'production'
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.INFO if IS_PRODUCTION else logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger('python_api')
+
+REPLIT_DOMAIN = os.environ.get('REPLIT_DOMAINS', '')
+
+ALLOWED_ORIGINS = [
+    "https://neurokid.help",
+    "https://www.neurokid.help",
+    "http://localhost:5000",
+    "http://localhost:3000",
+]
+
+if REPLIT_DOMAIN:
+    ALLOWED_ORIGINS.append(f"https://{REPLIT_DOMAIN}")
 
 app = FastAPI(
     title="NeuroKid Python Backend",
     description="Python backend API for analytics, data governance, and admin features",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    docs_url=None if IS_PRODUCTION else "/docs",
+    redoc_url=None if IS_PRODUCTION else "/redoc"
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS if IS_PRODUCTION else ["*"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+    allow_origin_regex=r"https://.*\.replit\.dev" if IS_PRODUCTION else None,
 )
 
 
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def add_security_headers(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4())[:8])
     start_time = datetime.now()
+    
     response = await call_next(request)
+    
     duration = (datetime.now() - start_time).total_seconds() * 1000
-    logger.info(f"{request.method} {request.url.path} - {response.status_code} - {duration:.2f}ms")
+    logger.info(f"[{request_id}] {request.method} {request.url.path} - {response.status_code} - {duration:.2f}ms")
+    
+    response.headers["X-Request-ID"] = request_id
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    
     return response
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"success": False, "error": {"code": "INTERNAL_ERROR", "message": str(exc)}}
-    )
+    request_id = request.headers.get("X-Request-ID", "unknown")
+    logger.error(f"[{request_id}] Unhandled exception: {exc}", exc_info=True)
+    
+    if IS_PRODUCTION:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False, 
+                "error": {
+                    "code": "INTERNAL_ERROR", 
+                    "message": "An unexpected error occurred. Please try again later.",
+                    "requestId": request_id
+                }
+            }
+        )
+    else:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": {"code": "INTERNAL_ERROR", "message": str(exc)}}
+        )
 
 
 from api.routes import users_router, analytics_router, posts_router, governance_router
@@ -75,12 +117,15 @@ async def health_check():
     
     try:
         result = execute_query("SELECT 1 as check", fetch_one=True)
-        db_status = "connected" if result else "error"
+        db_status = "connected" if result else "disconnected"
     except Exception as e:
-        db_status = f"error: {str(e)}"
+        logger.error(f"Health check DB error: {e}")
+        db_status = "disconnected"
+    
+    status = "healthy" if db_status == "connected" else "degraded"
     
     return {
-        "status": "healthy",
+        "status": status,
         "database": db_status,
         "timestamp": datetime.now().isoformat()
     }
@@ -89,6 +134,7 @@ async def health_check():
 @app.get("/api/python/stats")
 async def api_stats():
     """Get API usage statistics"""
+    from api.cache import cache
     return {
         "endpoints": {
             "users": "/api/python/users",
@@ -102,7 +148,8 @@ async def api_stats():
             "Content moderation tools",
             "Data governance and GDPR compliance",
             "Audit logging and retention"
-        ]
+        ],
+        "cache": cache.stats()
     }
 
 
