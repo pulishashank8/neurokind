@@ -109,6 +109,19 @@ Preferred communication style: Simple, everyday language.
 - **Test Database**: Separate PostgreSQL database for isolated testing
 - Uses `prisma db push` for test schema management
 
+### Python Background Tasks
+- **Location**: `python_tasks/` directory
+- **Runtime**: Python 3.11 with schedule, psycopg2, requests
+- **Scheduled Tasks**:
+  - Audit log cleanup (daily at 2:00 AM)
+  - Analytics processing (daily at 3:00 AM)
+  - Pending notifications (every 15 minutes)
+  - Health check (every 5 minutes)
+- **Task Modules**:
+  - `tasks/database.py`: Database cleanup and maintenance
+  - `tasks/analytics.py`: User engagement analytics
+  - `tasks/notifications.py`: Email notification processing
+
 ### Deployment
 - **Vercel**: Primary deployment target (configured in `vercel.json`)
 - **Replit**: Development environment with custom port configuration (5000)
