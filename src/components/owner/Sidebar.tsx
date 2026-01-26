@@ -9,16 +9,26 @@ import {
   MessageSquare, 
   Heart, 
   Activity,
-  LogOut
+  LogOut,
+  BarChart3,
+  ClipboardList,
+  Building2,
+  Search,
+  Wifi
 } from 'lucide-react';
 
 const navItems = [
   { href: '/owner/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { href: '/owner/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/owner/dashboard/users', label: 'Users', icon: Users },
   { href: '/owner/dashboard/posts', label: 'Posts', icon: FileText },
   { href: '/owner/dashboard/comments', label: 'Comments', icon: MessageSquare },
   { href: '/owner/dashboard/votes', label: 'Votes/Likes', icon: Heart },
   { href: '/owner/dashboard/activity', label: 'Activity Log', icon: Activity },
+  { href: '/owner/dashboard/online', label: 'Online Users', icon: Wifi },
+  { href: '/owner/dashboard/screening', label: 'Screenings', icon: ClipboardList },
+  { href: '/owner/dashboard/providers', label: 'Providers', icon: Building2 },
+  { href: '/owner/dashboard/searches', label: 'Search Analytics', icon: Search },
 ];
 
 export default function OwnerSidebar() {

@@ -2,7 +2,8 @@ import { prisma } from '@/lib/prisma';
 import { format } from 'date-fns';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Mail, Calendar, Clock, FileText, MessageSquare, Heart } from 'lucide-react';
+import { ArrowLeft, Mail, Calendar, Clock, FileText, MessageSquare, Heart, Ban, StickyNote } from 'lucide-react';
+import UserActions from './UserActions';
 
 async function getUser(id: string) {
   const user = await prisma.user.findUnique({
@@ -10,6 +11,9 @@ async function getUser(id: string) {
     include: {
       profile: true,
       userRoles: true,
+      ownerNotes: {
+        orderBy: { createdAt: 'desc' },
+      },
       posts: {
         orderBy: { createdAt: 'desc' },
         take: 10,
@@ -64,13 +68,32 @@ export default async function UserDetailPage({
           <ArrowLeft size={16} />
           Back to Users
         </Link>
-        <h1 className="text-2xl font-bold text-gray-800">
-          {user.profile?.displayName || 'Anonymous User'}
-        </h1>
-        <p className="text-gray-500">@{user.profile?.username || 'no-username'}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-800">
+                {user.profile?.displayName || 'Anonymous User'}
+              </h1>
+              {user.isBanned && (
+                <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium flex items-center gap-1">
+                  <Ban size={14} />
+                  Banned
+                </span>
+              )}
+            </div>
+            <p className="text-gray-500">@{user.profile?.username || 'no-username'}</p>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <UserActions 
+        userId={user.id} 
+        isBanned={user.isBanned} 
+        bannedReason={user.bannedReason}
+        initialNotes={user.ownerNotes}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 mt-6">
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="font-semibold text-gray-800 mb-4">User Info</h2>
           <div className="space-y-3">
@@ -178,6 +201,12 @@ export default async function UserDetailPage({
                 {user.profile?.shadowbanned ? 'Yes' : 'No'}
               </p>
             </div>
+            {user.isBanned && user.bannedReason && (
+              <div>
+                <p className="text-gray-500">Ban Reason</p>
+                <p className="text-red-600">{user.bannedReason}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

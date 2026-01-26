@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Eye, MessageSquare, ThumbsUp, Clock } from 'lucide-react';
+import PostModeration from '@/components/owner/PostModeration';
 
 async function getPosts(page: number = 1, search: string = '') {
   const pageSize = 20;
@@ -93,6 +94,7 @@ export default async function PostsPage({
                 <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Comments</th>
                 <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Score</th>
                 <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Created</th>
+                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -161,6 +163,14 @@ export default async function PostsPage({
                       <Clock size={14} />
                       {format(post.createdAt, 'MMM d, yyyy')}
                     </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <PostModeration 
+                      postId={post.id} 
+                      status={post.status} 
+                      isLocked={post.isLocked} 
+                      isPinned={post.isPinned} 
+                    />
                   </td>
                 </tr>
               ))}

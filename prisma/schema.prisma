@@ -152,9 +152,18 @@ model User {
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
   lastLoginAt           DateTime?
+  
+  // Ban status
+  isBanned              Boolean    @default(false)
+  bannedAt              DateTime?
+  bannedReason          String?    @db.Text
 
   // Relations
   profile               Profile?
+  ownerNotes            OwnerNote[]
+  sessions              UserSession[]
+  screeningResults      ScreeningResult[]
+  searchQueries         SearchQuery[]
   userRoles             UserRole[]
   posts                 Post[]
   comments              Comment[]
@@ -967,6 +976,73 @@ model DailyWin {
 
   @@index([userId])
   @@index([date])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// OWNER DASHBOARD FEATURES
+// ============================================================================
+
+model OwnerNote {
+  id                    String     @id @default(cuid())
+  userId                String
+  note                  String     @db.Text
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model UserSession {
+  id                    String     @id @default(cuid())
+  userId                String
+  sessionToken          String     @unique
+  lastActiveAt          DateTime   @default(now())
+  userAgent             String?    @db.Text
+  ipAddress             String?    @db.VarChar(50)
+  createdAt             DateTime   @default(now())
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([lastActiveAt])
+  @@index([createdAt])
+}
+
+model ScreeningResult {
+  id                    String     @id @default(cuid())
+  userId                String?
+  screeningType         String     @db.VarChar(50) // e.g., "M-CHAT", "ADOS", "AQ"
+  score                 Int?
+  riskLevel             String?    @db.VarChar(20) // e.g., "low", "medium", "high"
+  completedAt           DateTime   @default(now())
+  answers               Json?
+  createdAt             DateTime   @default(now())
+
+  user                  User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([screeningType])
+  @@index([riskLevel])
+  @@index([completedAt])
+}
+
+model SearchQuery {
+  id                    String     @id @default(cuid())
+  userId                String?
+  query                 String     @db.VarChar(500)
+  searchType            String     @db.VarChar(50) // e.g., "forum", "providers", "resources"
+  resultsCount          Int?
+  createdAt             DateTime   @default(now())
+
+  user                  User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([searchType])
+  @@index([query])
   @@index([createdAt])
 }
 

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Clock, ThumbsUp } from 'lucide-react';
+import CommentModeration from '@/components/owner/CommentModeration';
 
 async function getComments(page: number = 1, search: string = '') {
   const pageSize = 20;
@@ -87,6 +88,7 @@ export default async function CommentsPage({
                 <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Status</th>
                 <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Score</th>
                 <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Created</th>
+                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -137,6 +139,12 @@ export default async function CommentsPage({
                       <Clock size={14} />
                       {format(comment.createdAt, 'MMM d, yyyy h:mm a')}
                     </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <CommentModeration 
+                      commentId={comment.id} 
+                      status={comment.status} 
+                    />
                   </td>
                 </tr>
               ))}
