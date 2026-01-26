@@ -1,11 +1,29 @@
 import { redirect } from 'next/navigation';
-import { isAuthenticated, validatePassword, setSession } from '@/lib/auth';
+import { isAuthenticated, validatePassword, setSession, isPasswordConfigured } from '@/lib/auth';
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const passwordConfigured = isPasswordConfigured();
+  
+  if (!passwordConfigured) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600">Configuration Error</h1>
+            <p className="text-gray-500 mt-4">
+              The ADMIN_PASSWORD secret is not configured. Please set the ADMIN_PASSWORD 
+              environment variable to enable admin access.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   const authenticated = await isAuthenticated();
   if (authenticated) {
     redirect('/dashboard');
