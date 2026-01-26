@@ -1,23 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
+import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { subDays, startOfDay, format } from 'date-fns';
 
-async function verifyOwnerAuth() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('owner_session')?.value;
-  if (!token) return false;
-  
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword) return false;
-  
-  const crypto = await import('crypto');
-  const expectedToken = crypto.createHash('sha256').update(adminPassword).digest('hex');
-  return token === expectedToken;
-}
-
 export async function GET(request: NextRequest) {
-  if (!(await verifyOwnerAuth())) {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
