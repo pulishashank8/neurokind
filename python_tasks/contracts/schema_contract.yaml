@@ -1,0 +1,53 @@
+
+# Data Contract for User Entity
+# Defines the expected schema, types, and quality constraints for inter-team data exchange.
+# Version: 1.0.0
+
+contract_metadata:
+  name: "UserEntityContract"
+  domain: "Identity"
+  owner: "DataGovernanceTeam"
+  sla: "99.9%"
+  version: "1.0.0"
+
+schema:
+  fields:
+    - name: "id"
+      type: "string"
+      nullable: false
+      description: "Unique CUID identifier."
+      pii: false
+
+    - name: "content" 
+      # Note: This seems to be mapped to Post/Comment in reality, 
+      # but for User contract we usually look for 'email' or 'username'.
+      # Let's define it for the USER object based on our previous models.
+      
+    - name: "email"
+      type: "string"
+      format: "email"
+      nullable: false
+      description: "User primary email address. Must be unique."
+      pii: true
+      masking_policy: "email_mask"
+
+    - name: "role"
+      type: "enum"
+      values: ["PARENT", "THERAPIST", "MODERATOR", "ADMIN"]
+      nullable: false
+      default: "PARENT"
+
+    - name: "createdAt"
+      type: "timestamp"
+      nullable: false
+
+quality_rules:
+  - rule: "completeness"
+    threshold: 1.0
+    field: "email"
+  
+  - rule: "uniqueness"
+    field: "email"
+
+  - rule: "freshness"
+    max_age_seconds: 3600

@@ -80,33 +80,33 @@ export default function OnlineUsersPage() {
   }
 
   return (
-    <div>
+    <div className="space-y-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Online Users & Sessions</h1>
-        <p className="text-gray-500">Real-time view of active users (refreshes every 30 seconds)</p>
+        <h1 className="text-2xl lg:text-3xl font-bold text-white">Live Operations</h1>
+        <p className="text-slate-400">Real-time view of active users (refreshes every 30 seconds)</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <Wifi className="text-green-600" size={24} />
+        <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/5 p-6 shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+              <Wifi className="text-emerald-400" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Currently Online</p>
-              <p className="text-3xl font-bold text-gray-800">{stats?.onlineCount || 0}</p>
+              <p className="text-sm text-slate-500 font-medium">Currently Online</p>
+              <p className="text-3xl font-bold text-white tabular-nums">{stats?.onlineCount || 0}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Clock className="text-blue-600" size={24} />
+        <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/5 p-6 shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+              <Clock className="text-blue-400" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Recent Logins</p>
-              <p className="text-3xl font-bold text-gray-800">{stats?.recentLogins?.length || 0}</p>
+              <p className="text-sm text-slate-500 font-medium">Recent Logins Today</p>
+              <p className="text-3xl font-bold text-white tabular-nums">{stats?.recentLogins?.length || 0}</p>
             </div>
           </div>
         </div>
@@ -118,7 +118,7 @@ export default function OnlineUsersPage() {
             <Wifi className="text-green-600" size={20} />
             <h2 className="text-lg font-semibold text-gray-800">Active Sessions</h2>
           </div>
-          
+
           {stats?.onlineSessions && stats.onlineSessions.length > 0 ? (
             <div className="space-y-3">
               {stats.onlineSessions.map((session) => (
@@ -157,7 +157,7 @@ export default function OnlineUsersPage() {
             <Users className="text-blue-600" size={20} />
             <h2 className="text-lg font-semibold text-gray-800">Recent Logins</h2>
           </div>
-          
+
           {stats?.recentLogins && stats.recentLogins.length > 0 ? (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {stats.recentLogins.map((user) => (

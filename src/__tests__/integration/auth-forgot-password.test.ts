@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST as forgotPasswordHandler } from '@/app/api/auth/forgot-password/route';
 import { POST as resetPasswordHandler } from '@/app/api/auth/reset-password/route';
 import { createMockRequest, parseResponse } from '../helpers/api';
 import { getTestPrisma } from '../helpers/database';
+import { resetMockData } from '../setup';
 import crypto from 'crypto';
 import bcryptjs from 'bcryptjs';
 
@@ -17,6 +17,7 @@ import { sendPasswordResetEmail } from '@/lib/mailer';
 
 describe('Auth Forgot Password Integration', () => {
     beforeEach(async () => {
+        resetMockData();
         vi.clearAllMocks();
     });
 

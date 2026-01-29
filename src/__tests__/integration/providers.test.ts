@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { resetMockData } from '../setup';
 import { GET } from '@/app/api/providers/route';
 import { createMockRequest, parseResponse } from '../helpers/api';
 import { getTestPrisma } from '../helpers/database';
@@ -7,6 +7,7 @@ const prisma = getTestPrisma();
 
 describe('Providers API Integration Tests', () => {
     beforeEach(async () => {
+        resetMockData();
         // Create test providers
         await prisma.provider.createMany({
             data: [

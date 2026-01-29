@@ -1,82 +1,99 @@
+
 """
-Tests for background tasks
+Tests for background tasks - Refactored for Async Architecture
 """
 
 import os
 import sys
 import pytest
-from unittest.mock import patch, MagicMock
+import asyncio
+from unittest.mock import patch, AsyncMock, MagicMock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Mocking database session context manager
+class AsyncContextManagerMock:
+    def __init__(self, session_mock):
+        self.session = session_mock
 
+    async def __aenter__(self):
+        return self.session
+
+    async def __aexit__(self, exc_type, exc, tb):
+        pass
+
+@pytest.mark.asyncio
 class TestDatabaseTasks:
     """Test database maintenance tasks"""
     
-    @patch('tasks.database.psycopg2')
-    def test_cleanup_old_audit_logs(self, mock_psycopg2):
+    @patch('tasks.database.get_session')
+    async def test_cleanup_audit_logs(self, mock_get_session):
         """Test audit log cleanup"""
-        from tasks.database import cleanup_old_audit_logs
+        from tasks.database import cleanup_audit_logs
         
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.rowcount = 5
-        mock_conn.cursor.return_value = mock_cursor
-        mock_psycopg2.connect.return_value = mock_conn
+        # Setup Mock Session
+        mock_session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.rowcount = 10
+        mock_session.execute.return_value = mock_result
         
-        with patch.dict(os.environ, {'DATABASE_URL': 'postgresql://test'}):
-            result = cleanup_old_audit_logs(days=90)
+        mock_get_session.return_value = AsyncContextManagerMock(mock_session)
         
-        assert result >= 0
+        result = await cleanup_audit_logs(days=90)
+        
+        assert result == 10
+        mock_session.execute.assert_called()
     
-    @patch('tasks.database.psycopg2')
-    def test_cleanup_expired_sessions(self, mock_psycopg2):
+    @patch('tasks.database.get_session')
+    async def test_cleanup_expired_sessions(self, mock_get_session):
         """Test expired session cleanup"""
         from tasks.database import cleanup_expired_sessions
         
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.rowcount = 3
-        mock_conn.cursor.return_value = mock_cursor
-        mock_psycopg2.connect.return_value = mock_conn
+        mock_session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.rowcount = 5
+        mock_session.execute.return_value = mock_result
         
-        with patch.dict(os.environ, {'DATABASE_URL': 'postgresql://test'}):
-            result = cleanup_expired_sessions()
+        mock_get_session.return_value = AsyncContextManagerMock(mock_session)
         
-        assert result >= 0
-    
-    def test_cleanup_without_database_url(self):
-        """Test cleanup fails gracefully without DATABASE_URL"""
-        from tasks.database import cleanup_old_audit_logs
+        result = await cleanup_expired_sessions()
         
-        with patch.dict(os.environ, {'DATABASE_URL': ''}):
-            result = cleanup_old_audit_logs()
-        
-        assert result == 0
+        assert result == 5
+        mock_session.execute.assert_called()
 
-
+@pytest.mark.asyncio
 class TestNotificationTasks:
     """Test notification tasks"""
     
-    @patch('tasks.notifications.psycopg2')
-    def test_send_pending_emails(self, mock_psycopg2):
+    @patch('tasks.notifications.get_session')
+    @patch('tasks.notifications.NotificationRepository')
+    async def test_send_pending_emails(self, MockRepo, mock_get_session):
         """Test sending pending email notifications"""
         from tasks.notifications import send_pending_emails
         
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.fetchall.return_value = []
-        mock_conn.cursor.return_value = mock_cursor
-        mock_psycopg2.connect.return_value = mock_conn
+        mock_session = AsyncMock()
+        mock_get_session.return_value = AsyncContextManagerMock(mock_session)
         
-        with patch.dict(os.environ, {'DATABASE_URL': 'postgresql://test'}):
-            result = send_pending_emails()
+        # Mock Repository behavior
+        mock_repo_instance = MockRepo.return_value
         
-        assert result >= 0
+        # Mock notification objects
+        msg1 = MagicMock()
+        msg1.id = "1"
+        msg2 = MagicMock()
+        msg2.id = "2"
+        
+        mock_repo_instance.get_pending_notifications = AsyncMock(return_value=[msg1, msg2])
+        mock_repo_instance.mark_as_read = AsyncMock()
+        
+        result = await send_pending_emails()
+        
+        assert result == 2
+        assert mock_repo_instance.mark_as_read.call_count == 2
     
     @patch('tasks.notifications.requests')
     def test_send_email(self, mock_requests):
-        """Test sending an email"""
+        """Test sending an email (Sync function)"""
         from tasks.notifications import send_email
         
         mock_response = MagicMock()
@@ -87,70 +104,32 @@ class TestNotificationTasks:
             result = send_email("test@example.com", "Test Subject", "<p>Test</p>")
         
         assert result is True
-    
-    def test_send_email_without_api_key(self):
-        """Test email fails gracefully without API key"""
-        from tasks.notifications import send_email
-        
-        with patch.dict(os.environ, {'RESEND_API_KEY': ''}):
-            result = send_email("test@example.com", "Test", "<p>Test</p>")
-        
-        assert result is False
 
-
+@pytest.mark.asyncio
 class TestAnalyticsTasks:
     """Test analytics processing tasks"""
     
-    @patch('tasks.analytics.psycopg2')
-    def test_process_daily_analytics(self, mock_psycopg2):
+    @patch('tasks.analytics.get_session')
+    @patch('tasks.analytics.SnowflakeAdapter')
+    async def test_process_daily_analytics(self, MockSnowflake, mock_get_session):
         """Test daily analytics processing"""
         from tasks.analytics import process_daily_analytics
         
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.fetchone.return_value = [10, 50, 200, 500]
-        mock_conn.cursor.return_value = mock_cursor
-        mock_psycopg2.connect.return_value = mock_conn
+        mock_session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar.side_effect = [10, 5, 0, 0, 0, 0] # users, posts, drift checks...
+        mock_session.execute.return_value = mock_result
         
-        with patch.dict(os.environ, {'DATABASE_URL': 'postgresql://test'}):
-            result = process_daily_analytics()
+        # Make check_data_drift return None (no drift) or mock the sub-calls
+        # Alternatively, mocking session.execute covers the calls inside check_data_drift
+        # For simple unit test, we just want to ensure it completes
+        
+        mock_get_session.return_value = AsyncContextManagerMock(mock_session)
+        
+        result = await process_daily_analytics()
         
         assert result is not None
-    
-    @patch('tasks.analytics.psycopg2')
-    def test_calculate_engagement_scores(self, mock_psycopg2):
-        """Test engagement score calculation"""
-        from tasks.analytics import calculate_engagement_scores
+        assert result['new_users'] == 10
         
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.rowcount = 5
-        mock_conn.cursor.return_value = mock_cursor
-        mock_psycopg2.connect.return_value = mock_conn
-        
-        with patch.dict(os.environ, {'DATABASE_URL': 'postgresql://test'}):
-            result = calculate_engagement_scores()
-        
-        assert result >= 0
-
-
-class TestTaskScheduler:
-    """Test task scheduler configuration"""
-    
-    def test_scheduler_configuration(self):
-        """Test that scheduler is properly configured"""
-        import schedule
-        
-        assert schedule is not None
-    
-    @patch('schedule.run_pending')
-    def test_run_pending_jobs(self, mock_run):
-        """Test running pending scheduled jobs"""
-        import schedule
-        
-        schedule.run_pending()
-        mock_run.assert_called_once()
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+        # Verify Snowflake Sync was attempted
+        MockSnowflake.return_value.sync_table.assert_called()

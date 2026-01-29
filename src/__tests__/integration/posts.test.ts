@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { resetMockData } from '../setup';
 import { GET, POST } from '@/app/api/posts/route';
 import { GET as getPost, PATCH, DELETE } from '@/app/api/posts/[id]/route';
 import {
@@ -29,6 +29,7 @@ describe('Posts API Integration Tests', () => {
   let mockSession: any;
 
   beforeEach(async () => {
+        resetMockData();
     // Create test user with unique email
     const uniqueId = Date.now();
     testUser = await createTestUser(`post-test-${uniqueId}@example.com`, 'password123', `posttester${uniqueId}`);
@@ -256,11 +257,11 @@ describe('Posts API Integration Tests', () => {
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
-      expect(data.id).toBe(post.id);
-      expect(data.title).toBe('Detailed Post');
-      expect(data.content).toContain('Detailed content');
-      expect(data.category).toBeDefined();
-      expect(data.author).toBeDefined();
+      expect(data.data.id).toBe(post.id);
+      expect(data.data.title).toBe('Detailed Post');
+      expect(data.data.content).toContain('Detailed content');
+      expect(data.data.category).toBeDefined();
+      expect(data.data.author).toBeDefined();
     });
 
     it('should return 404 for non-existent post', async () => {
@@ -286,8 +287,8 @@ describe('Posts API Integration Tests', () => {
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
-      expect(data.isAnonymous).toBe(true);
-      expect(data.author.username).toBe('Anonymous');
+      expect(data.data.isAnonymous).toBe(true);
+      expect(data.data.author.username).toBe('Anonymous');
     });
   });
 
@@ -311,8 +312,8 @@ describe('Posts API Integration Tests', () => {
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
-      expect(data.title).toBe('Updated Title');
-      expect(data.content).toContain('Updated content');
+      expect(data.data.title).toBe('Updated Title');
+      expect(data.data.content).toContain('Updated content');
 
       // Verify in database
       const updatedPost = await prisma.post.findUnique({
@@ -379,7 +380,7 @@ describe('Posts API Integration Tests', () => {
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
-      expect(data.message).toBeDefined();
+      expect(data.data.message).toBeDefined();
 
       // Verify soft delete in database
       const deletedPost = await prisma.post.findUnique({

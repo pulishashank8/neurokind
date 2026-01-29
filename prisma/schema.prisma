@@ -200,8 +200,14 @@ model User {
   sentConnectionRequests     ConnectionRequest[] @relation("ConnectionRequestSender")
   receivedConnectionRequests ConnectionRequest[] @relation("ConnectionRequestReceiver")
   
+
   // Daily wins journal
   dailyWins                  DailyWin[]
+
+  // Governance
+  consents                   UserConsent[]
+  sensitiveAccessLogs        SensitiveAccessLog[]
+
 
   @@index([email])
   @@index([createdAt])
@@ -721,6 +727,8 @@ model Dataset {
   domain                String     @db.VarChar(100)
   ownerTeam             String
   sensitivity           DataSensitivity @default(INTERNAL)
+  retentionPolicy       String?    @db.VarChar(100) // e.g., "7 years", "Indefinite"
+  updateFrequency       String?    @db.VarChar(100) // e.g., "Daily", "Real-time"
   tags                  String[]
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
@@ -728,8 +736,11 @@ model Dataset {
   owner                 DataOwner  @relation(fields: [ownerTeam], references: [teamName], onDelete: Restrict)
   fields                DatasetField[]
   glossaryTerms         DatasetGlossaryTerm[]
+  qualityRules          DataQualityRule[]
+  lineageNodes          DataLineageNode[]
 
   @@index([domain])
+
   @@index([sensitivity])
   @@index([name])
   @@index([ownerTeam])
@@ -1046,3 +1057,156 @@ model SearchQuery {
   @@index([createdAt])
 }
 
+
+// ============================================================================
+// DATA LINEAGE
+// ============================================================================
+
+enum LineageNodeType {
+  SOURCE
+  PROCESS
+  STORE
+  REPORT
+}
+
+model DataLineageNode {
+  id                    String     @id @default(cuid())
+  datasetId             String?
+  name                  String     @db.VarChar(255)
+  type                  LineageNodeType
+  metadata              Json?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  dataset               Dataset?   @relation(fields: [datasetId], references: [id], onDelete: SetNull)
+  upcomingEdges         DataLineageEdge[] @relation("SourceNode")
+  outgoingEdges         DataLineageEdge[] @relation("TargetNode")
+
+  @@index([datasetId])
+  @@index([type])
+}
+
+model DataLineageEdge {
+  id                    String     @id @default(cuid())
+  sourceNodeId          String
+  targetNodeId          String
+  transformationLogic   String?    @db.Text
+  createdAt             DateTime   @default(now())
+
+  sourceNode            DataLineageNode @relation("SourceNode", fields: [sourceNodeId], references: [id], onDelete: Cascade)
+  targetNode            DataLineageNode @relation("TargetNode", fields: [targetNodeId], references: [id], onDelete: Cascade)
+
+  @@index([sourceNodeId])
+  @@index([targetNodeId])
+}
+
+// ============================================================================
+// DATA QUALITY & ML ANOMALY DETECTION
+// ============================================================================
+
+enum DataQualityRuleType {
+  NULL_CHECK
+  REGEX_MATCH
+  RANGE_CHECK
+  FOREIGN_KEY
+  ANOMALY_DETECTION // ML-based Z-Score or Isolation Forest
+  CUSTOM_SQL
+}
+
+model DataQualityRule {
+  id                    String     @id @default(cuid())
+  datasetId             String
+  fieldName             String?    @db.VarChar(255)
+  ruleType              DataQualityRuleType
+  name                  String     @db.VarChar(255)
+  description           String?    @db.Text
+  criteria              Json       // Stores params like { min: 0, max: 100 } or { regex: "^[A-Z]" }
+  severity              String     @default("WARNING") // WARNING, CRITICAL
+  isActive              Boolean    @default(true)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  dataset               Dataset    @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  executions            DataQualityResult[]
+
+  @@index([datasetId])
+  @@index([ruleType])
+}
+
+model DataQualityResult {
+  id                    String     @id @default(cuid())
+  ruleId                String
+  status                String     // PASS, FAIL, ERROR
+  recordsChecked        Int        @default(0)
+  failuresFound         Int        @default(0)
+  anomalyScore          Float?     // For ML rules
+  failureSample         Json?      // Store IDs or samples of failed rows
+  runDate               DateTime   @default(now())
+  executionDurationMs   Int?
+
+  rule                  DataQualityRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+  @@index([status])
+  @@index([runDate])
+}
+
+// ============================================================================
+// PIPELINE & JOB MONITORING
+// ============================================================================
+
+model JobExecution {
+  id                    String     @id @default(cuid())
+  jobName               String     @db.VarChar(255)
+  status                String     // RUNNING, SUCCESS, FAILED
+  source                String?    // e.g., "PythonService", "NextJS", "Cron"
+  recordsProcessed      Int        @default(0)
+  startedAt             DateTime   @default(now())
+  completedAt           DateTime?
+  errorLog              String?    @db.Text
+  metadata              Json?
+
+  @@index([jobName])
+  @@index([status])
+  @@index([startedAt])
+}
+
+// ============================================================================
+// GOVERNANCE & COMPLIANCE
+// ============================================================================
+
+model UserConsent {
+  id                    String     @id @default(cuid())
+  userId                String
+  consentType           String     @db.VarChar(100) // e.g., "analytics_tracking", "ai_training", "research"
+  version               String     @db.VarChar(20)
+  hasGranted            Boolean    @default(false)
+  grantedAt             DateTime?
+  revokedAt             DateTime?
+  ipAddress             String?
+  userAgent             String?
+  createdAt             DateTime   @default(now())
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([consentType])
+  @@index([hasGranted])
+}
+
+model SensitiveAccessLog {
+  id                    String     @id @default(cuid())
+  adminUserId           String
+  datasetName           String     @db.VarChar(255)
+  actionType            String     // VIEW, EXPORT, UPDATE
+  recordCount           Int?
+  filterCriteria        Json?
+  reason                String?    @db.Text
+  accessedAt            DateTime   @default(now())
+
+  adminUser             User       @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId])
+  @@index([datasetName])
+  @@index([accessedAt])
+}

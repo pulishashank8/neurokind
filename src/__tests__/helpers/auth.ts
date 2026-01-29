@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { Session } from 'next-auth';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export interface TestUser {
   id: string;

@@ -203,6 +203,105 @@ neurokind/
 
 **Governance**
 - AuditLog, Dataset, DataOwner (enterprise data catalog)
+- DataQualityRule, DataQualityResult (automated quality gates)
+- SensitiveAccessLog, UserConsent (HIPAA compliance)
+- DataLineageNode, DataLineageEdge (data flow tracking)
+
+---
+
+## 🏛️ Data Governance Architecture
+
+**NeuroKind implements enterprise-grade data governance patterns for healthcare compliance.**
+
+### Privacy Engine (`python_tasks/services/governance.py`)
+
+The Privacy Engine provides HIPAA Safe Harbor de-identification with automated PHI detection:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Privacy Engine Flow                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  [Input Text] ──▶ [PHI Scanner] ──▶ [Risk Engine] ──▶ [Audit Log]
+│                        │                 │                  │
+│                        ▼                 ▼                  │
+│               [Redacted Output]    [Risk Level]             │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Detected PHI Types:**
+- Social Security Numbers (SSN) → `XXX-XX-XXXX`
+- Dates of Birth (DOB) → `XX/XX/XXXX`
+- Medical Record Numbers (MRN) → `MRN: [REDACTED]`
+- Phone Numbers → `(XXX) XXX-XXXX`
+- Email Addresses → `[REDACTED_EMAIL]`
+
+### Quality Gate & Quarantine Pattern (`python_tasks/services/quality.py`)
+
+Invalid data is isolated rather than rejected, enabling ETL pipelines to continue:
+
+```python
+# Quarantine Pattern - Invalid data wrapped in QuarantineRecord
+result = quality_gate.validate(User, incoming_data)
+
+if isinstance(result, ValidatedRecord):
+    # Safe to persist
+    await save_to_db(result.record)
+elif isinstance(result, QuarantineRecord):
+    # Isolated for review
+    await save_to_quarantine(result)
+    log.warning(f"Quarantined: {result.error_message}")
+```
+
+### Z-Score Anomaly Detection
+
+Automated anomaly detection using statistical methods:
+
+| Rule Type | Description | Threshold |
+|-----------|-------------|-----------|
+| `NULL_CHECK` | Detect missing required values | 0% tolerance |
+| `ANOMALY_DETECTION` | Z-Score outlier detection | σ > 3 |
+| `RANGE_CHECK` | Value boundary validation | Configurable |
+| `REGEX_MATCH` | Pattern matching (email, phone) | 95% compliance |
+
+### Data Lineage Tracking
+
+Full traceability from source to report:
+
+```
+SOURCE → TRANSFORM → STORE → AGGREGATE → REPORT
+  │          │         │         │          │
+  └──────────┴─────────┴─────────┴──────────┘
+         All transitions logged in DataLineageEdge
+```
+
+### Compliance Automation
+
+```bash
+# Generate HIPAA compliance audit report
+cd python_tasks
+python generate_audit_report.py --output-dir ./reports
+
+# Run industry-standard data validation (Great Expectations)
+python run_standard_checks.py --verbose
+```
+
+**Report includes:**
+- Trust Score calculation (Quality, Privacy, Integrity, Governance)
+- PHI/PII data inventory
+- Access audit trail
+- Consent compliance metrics
+- Quarantine status
+
+### Trust Center Dashboard
+
+Visual governance monitoring at `/owner/trust`:
+- Real-time Trust Score gauge
+- PHI Redaction Counter
+- Privacy Scanner status (Active/Idle)
+- HIPAA Safe Harbor compliance badge
+- Access audit metrics
 
 ---
 

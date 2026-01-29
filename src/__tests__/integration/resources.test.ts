@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { resetMockData } from '../setup';
 import { GET } from '@/app/api/resources/route';
 import { createMockRequest, parseResponse } from '../helpers/api';
 import { getTestPrisma } from '../helpers/database';
@@ -11,6 +11,7 @@ describe('Resources API Integration Tests', () => {
     let testUser: any;
 
     beforeEach(async () => {
+        resetMockData();
         // Create test user for resource ownership
         const uniqueId = Date.now();
         testUser = await createTestUser(`resource-test-${uniqueId}@example.com`, 'password123', `resourcetester${uniqueId}`);

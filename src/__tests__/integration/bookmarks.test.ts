@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { resetMockData } from '../setup';
 import { GET, POST } from '@/app/api/bookmarks/route';
 import {
     createTestUser,
@@ -29,6 +29,7 @@ describe('Bookmarks API Integration Tests', () => {
     let testPost: any;
 
     beforeEach(async () => {
+        resetMockData();
         testUser = await createTestUser('bookmark-user@example.com', 'password123', 'bookmarkuser');
         testCategory = await getSeededCategory('general-discussion');
         testPost = await createTestPost(testUser.id, testCategory.id, {

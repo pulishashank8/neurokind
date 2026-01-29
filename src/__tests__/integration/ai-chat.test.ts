@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '@/app/api/ai/chat/route';
 import { createTestUser, createMockSession } from '../helpers/auth';
 import { createMockRequest, parseResponse } from '../helpers/api';
+import { resetMockData } from '../setup';
 
 // Mock NextAuth
 vi.mock('next-auth', () => ({
@@ -34,10 +35,18 @@ global.fetch = vi.fn(() =>
 describe('AI Chat API Integration Tests', () => {
     let testUser: any;
     let mockSession: any;
+    const originalEnv = process.env;
 
     beforeEach(async () => {
+        // Mock GROQ_API_KEY so the route doesn't return early
+        process.env = { ...originalEnv, GROQ_API_KEY: 'test-api-key' };
+        resetMockData();
         testUser = await createTestUser('ai-user@example.com', 'password123', 'aiuser');
         mockSession = createMockSession(testUser);
+    });
+
+    afterEach(() => {
+        process.env = originalEnv;
     });
 
     describe('POST /api/ai/chat - Send Chat Message', () => {

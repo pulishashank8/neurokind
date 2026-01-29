@@ -1,4 +1,3 @@
-import { describe, it, expect } from "vitest";
 import { RegisterSchema } from "@/lib/validators";
 
 describe("RegisterSchema Validator", () => {

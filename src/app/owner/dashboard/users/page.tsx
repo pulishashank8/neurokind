@@ -9,12 +9,12 @@ async function getUsers(page: number = 1, search: string = '') {
 
   const where = search
     ? {
-        OR: [
-          { email: { contains: search, mode: 'insensitive' as const } },
-          { profile: { username: { contains: search, mode: 'insensitive' as const } } },
-          { profile: { displayName: { contains: search, mode: 'insensitive' as const } } },
-        ],
-      }
+      OR: [
+        { email: { contains: search, mode: 'insensitive' as const } },
+        { profile: { username: { contains: search, mode: 'insensitive' as const } } },
+        { profile: { displayName: { contains: search, mode: 'insensitive' as const } } },
+      ],
+    }
     : {};
 
   const [users, total] = await Promise.all([
@@ -53,110 +53,121 @@ export default async function UsersPage({
   const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div>
+    <div className="space-y-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Users</h1>
-        <p className="text-gray-500">View all registered users and their activity</p>
+        <h1 className="text-2xl lg:text-3xl font-bold text-white">Users</h1>
+        <p className="text-slate-400">View all registered users and their activity</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm">
-        <div className="p-4 border-b border-gray-200">
-          <form method="GET" className="flex gap-4">
+      <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/5 shadow-xl overflow-hidden">
+        <div className="p-4 lg:p-6 border-b border-white/5">
+          <form method="GET" className="flex flex-col sm:flex-row gap-4">
             <input
               type="text"
               name="search"
               defaultValue={search}
               placeholder="Search by email, username, or name..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="flex-1 px-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-white placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
             />
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all font-medium"
             >
               Search
             </button>
           </form>
         </div>
 
-        <div className="p-4">
-          <p className="text-sm text-gray-500 mb-4">
-            Showing {users.length} of {total} users
+        <div className="p-4 lg:px-6">
+          <p className="text-sm text-slate-400">
+            Showing <span className="text-white font-medium">{users.length}</span> of <span className="text-white font-medium">{total}</span> users
           </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-[800px]">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">User</th>
-                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Email</th>
-                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Roles</th>
-                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Posts</th>
-                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Comments</th>
-                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Votes</th>
-                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Last Login</th>
-                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Joined</th>
-                <th className="text-left py-3 px-4 text-gray-500 font-medium text-sm">Actions</th>
+              <tr className="border-b border-white/5 bg-white/[0.02]">
+                <th className="text-left py-4 px-6 text-slate-400 font-semibold text-xs uppercase tracking-wider">User</th>
+                <th className="text-left py-4 px-6 text-slate-400 font-semibold text-xs uppercase tracking-wider">Email</th>
+                <th className="text-left py-4 px-6 text-slate-400 font-semibold text-xs uppercase tracking-wider">Roles</th>
+                <th className="text-left py-4 px-6 text-slate-400 font-semibold text-xs uppercase tracking-wider text-center">Stats</th>
+                <th className="text-left py-4 px-6 text-slate-400 font-semibold text-xs uppercase tracking-wider">Last Activity</th>
+                <th className="text-left py-4 px-6 text-slate-400 font-semibold text-xs uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-white/5">
               {users.map((user) => (
-                <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <div className="font-medium text-gray-800">
-                      {user.profile?.displayName || 'No Name'}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      @{user.profile?.username || 'no-username'}
+                <tr key={user.id} className="group hover:bg-white/[0.02] transition-colors">
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
+                        {user.profile?.displayName?.[0] || user.email[0].toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-white truncate">
+                          {user.profile?.displayName || 'No Name'}
+                        </div>
+                        <div className="text-xs text-slate-500 truncate">
+                          @{user.profile?.username || 'no-username'}
+                        </div>
+                      </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <Mail size={14} className="text-gray-400" />
-                      <span className="text-gray-600">{user.email}</span>
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-2 text-slate-300">
+                      <Mail size={14} className="text-slate-500" />
+                      <span className="text-sm">{user.email}</span>
                     </div>
                     {user.emailVerified && (
-                      <span className="text-xs text-green-600 font-medium">Verified</span>
+                      <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded-full font-medium mt-1 inline-block">Verified</span>
                     )}
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="flex flex-wrap gap-1">
+                  <td className="py-4 px-6">
+                    <div className="flex flex-wrap gap-1.5">
                       {user.userRoles.map((role) => (
                         <span
                           key={role.id}
-                          className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700"
+                          className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20"
                         >
                           {role.role}
                         </span>
                       ))}
                       {user.userRoles.length === 0 && (
-                        <span className="text-gray-400 text-sm">No roles</span>
+                        <span className="text-slate-600 text-xs italic">No roles</span>
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-gray-600">{user._count.posts}</td>
-                  <td className="py-3 px-4 text-gray-600">{user._count.comments}</td>
-                  <td className="py-3 px-4 text-gray-600">{user._count.votes}</td>
-                  <td className="py-3 px-4 text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Clock size={14} className="text-gray-400" />
-                      {user.lastLoginAt
-                        ? format(user.lastLoginAt, 'MMM d, yyyy')
-                        : 'Never'}
+                  <td className="py-4 px-6">
+                    <div className="flex items-center justify-center gap-4 text-slate-400">
+                      <div className="text-center" title="Posts">
+                        <div className="text-white font-bold text-sm">{user._count.posts}</div>
+                        <div className="text-[10px] uppercase">P</div>
+                      </div>
+                      <div className="text-center" title="Comments">
+                        <div className="text-white font-bold text-sm">{user._count.comments}</div>
+                        <div className="text-[10px] uppercase">C</div>
+                      </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Calendar size={14} className="text-gray-400" />
-                      {format(user.createdAt, 'MMM d, yyyy')}
+                  <td className="py-4 px-6">
+                    <div className="flex flex-col gap-1 text-xs">
+                      <div className="flex items-center gap-2 text-slate-300">
+                        <Clock size={12} className="text-slate-500" />
+                        {user.lastLoginAt ? format(user.lastLoginAt, 'MMM d, yyyy') : 'Never'}
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Calendar size={12} />
+                        Joined {format(user.createdAt, 'MMM d')}
+                      </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-4 px-6">
                     <Link
                       href={`/owner/dashboard/users/${user.id}`}
-                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white transition-all text-sm font-medium"
                     >
-                      <Eye size={16} />
+                      <Eye size={14} />
                       View
                     </Link>
                   </td>

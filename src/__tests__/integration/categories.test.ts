@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { GET } from '@/app/api/categories/route';
 import { createMockRequest, parseResponse } from '../helpers/api';
 

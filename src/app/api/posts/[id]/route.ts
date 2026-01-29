@@ -117,6 +117,7 @@ export const GET = withApiHandler(async (
     return successResponse(formattedPost);
   } catch (error: any) {
     console.error(`[GET /api/posts/FAILED] Error:`, error);
+    console.error(`Stack:`, error.stack);
     return errorResponse("INTERNAL_ERROR", "Internal Server Error", 500);
   }
 });
@@ -152,7 +153,7 @@ export async function PATCH(
     const isModerator = await canModerate(session.user.id);
     if (post.authorId !== session.user.id && !isModerator) {
       await logSecurityEvent({
-        action: 'UNAUTHORIZED_ACCESS',
+        action: 'PERMISSION_DENIED',
         userId: session.user.id,
         resource: 'post',
         resourceId: id,
@@ -228,7 +229,7 @@ export async function DELETE(
     const isModerator = await canModerate(session.user.id);
     if (post.authorId !== session.user.id && !isModerator) {
       await logSecurityEvent({
-        action: 'UNAUTHORIZED_ACCESS',
+        action: 'PERMISSION_DENIED',
         userId: session.user.id,
         resource: 'post',
         resourceId: id,
@@ -243,7 +244,7 @@ export async function DELETE(
     });
 
     await logSecurityEvent({
-      action: 'CONTENT_MODERATION',
+      action: 'MODERATION_ACTION',
       userId: session.user.id,
       resource: 'post',
       resourceId: id,

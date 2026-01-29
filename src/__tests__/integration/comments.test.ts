@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { resetMockData } from '../setup';
 import { GET, POST } from '@/app/api/posts/[id]/comments/route';
 import {
   createTestUser,
@@ -29,6 +29,7 @@ describe('Comments API Integration Tests', () => {
   let mockSession: any;
 
   beforeEach(async () => {
+        resetMockData();
     // Unique user to prevent conflicts
     const uniqueId = Date.now();
     testUser = await createTestUser(`comment-test-${uniqueId}@example.com`, 'password123', `commenttester${uniqueId}`);
@@ -58,9 +59,9 @@ describe('Comments API Integration Tests', () => {
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
-      expect(data.content).toContain('This is a test comment');
-      expect(data.author.id).toBe(testUser.id);
-      expect(data.postId).toBe(testPost.id);
+      expect(data.data.content).toContain('This is a test comment');
+      expect(data.data.author.id).toBe(testUser.id);
+      expect(data.data.postId).toBe(testPost.id);
 
       // Verify in database
       const commentInDb = await prisma.comment.findFirst({
@@ -86,8 +87,8 @@ describe('Comments API Integration Tests', () => {
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
-      expect(data.isAnonymous).toBe(true);
-      expect(data.author.username).toBe('Anonymous');
+      expect(data.data.isAnonymous).toBe(true);
+      expect(data.data.author.username).toBe('Anonymous');
     });
 
     it('should create a reply to a comment', async () => {
@@ -119,12 +120,12 @@ describe('Comments API Integration Tests', () => {
       }
 
       expect(response.status).toBe(201);
-      expect(data.content).toContain('This is a reply');
-      expect(data.parentCommentId).toBe(parentComment.id);
+      expect(data.data.content).toContain('This is a reply');
+      expect(data.data.parentCommentId).toBe(parentComment.id);
 
       // Verify in database
       const replyInDb = await prisma.comment.findUnique({
-        where: { id: data.id },
+        where: { id: data.data.id },
       });
       expect(replyInDb?.parentCommentId).toBe(parentComment.id);
     });
@@ -185,8 +186,8 @@ describe('Comments API Integration Tests', () => {
       }
 
       expect(response.status).toBe(201);
-      expect(data.content).not.toContain('<script>');
-      expect(data.content).toContain('Safe text');
+      expect(data.data.content).not.toContain('<script>');
+      expect(data.data.content).toContain('Safe text');
     });
 
     it('should fail when post does not exist', async () => {
@@ -238,9 +239,9 @@ describe('Comments API Integration Tests', () => {
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
-      expect(data.comments).toBeDefined(); // Use data.comments!
-      expect(Array.isArray(data.comments)).toBe(true);
-      expect(data.comments.length).toBeGreaterThan(0);
+      expect(data.data.comments).toBeDefined(); // Use data.data.comments!
+      expect(Array.isArray(data.data.comments)).toBe(true);
+      expect(data.data.comments.length).toBeGreaterThan(0);
     });
 
     it('should return threaded comment structure', async () => {
@@ -253,7 +254,7 @@ describe('Comments API Integration Tests', () => {
       expect(response.status).toBe(200);
 
       // The API returns { comments: [...] }
-      const comments = data.comments;
+      const comments = data.data.comments;
 
       // Find root comments (those without parentCommentId)
       const rootComments = comments.filter((c: any) => !c.parentCommentId);
@@ -297,7 +298,7 @@ describe('Comments API Integration Tests', () => {
 
       expect(response.status).toBe(200);
 
-      const comments = data.comments;
+      const comments = data.data.comments;
       const anonymousComment = comments.find((c: any) => c.isAnonymous === true);
       expect(anonymousComment).toBeDefined();
       expect(anonymousComment.author.username).toBe('Anonymous');

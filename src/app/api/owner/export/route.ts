@@ -1,24 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
-import { format } from 'date-fns';
+import { isAdminAuthenticated } from '@/lib/admin-auth';
 
-async function verifyOwnerAuth() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('owner_session')?.value;
-  if (!token) return false;
-  
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword) return false;
-  
-  const crypto = await import('crypto');
-  const expectedToken = crypto.createHash('sha256').update(adminPassword).digest('hex');
-  return token === expectedToken;
-}
+// Helper function verifyOwnerAuth removed in favor of standardized isAdminAuthenticated
+
 
 function toCSV(data: Record<string, unknown>[], columns: string[]): string {
   const header = columns.join(',');
-  const rows = data.map(row => 
+  const rows = data.map(row =>
     columns.map(col => {
       const value = row[col];
       if (value === null || value === undefined) return '';
@@ -34,8 +21,12 @@ function toCSV(data: Record<string, unknown>[], columns: string[]): string {
   return [header, ...rows].join('\n');
 }
 
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { format } from 'date-fns';
+
 export async function GET(request: NextRequest) {
-  if (!(await verifyOwnerAuth())) {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

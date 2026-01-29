@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { resetMockData } from '../setup';
 import { POST } from '@/app/api/votes/route';
 import {
   createTestUser,
@@ -31,6 +31,7 @@ describe('Votes API Integration Tests', () => {
   let mockSession: any;
 
   beforeEach(async () => {
+        resetMockData();
     testUser = await createTestUser('vote-test@example.com', 'password123', 'votetester');
     testCategory = await getSeededCategory('general-discussion');
     testPost = await createTestPost(testUser.id, testCategory.id, {

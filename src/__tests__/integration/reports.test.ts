@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { resetMockData } from '../setup';
 import { POST, GET } from '@/app/api/reports/route';
 import { PATCH } from '@/app/api/reports/[id]/route';
 import {
@@ -31,6 +31,7 @@ describe('Reports API Integration Tests', () => {
     let testPost: any;
 
     beforeEach(async () => {
+        resetMockData();
         testUser = await createTestUser('reporter@example.com', 'password123', 'reporter');
         moderatorUser = await createModeratorUser('moderator@example.com', 'password123', 'moderator');
         testCategory = await getSeededCategory('general-discussion');

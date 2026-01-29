@@ -53,32 +53,32 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Analytics & Growth</h1>
-          <p className="text-gray-500">Track platform growth over the last 30 days</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-white">Analytics & Growth</h1>
+          <p className="text-slate-400">Track platform growth over the last 30 days</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => handleExport('users')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl hover:bg-blue-500 hover:text-white transition-all"
           >
             <Download size={16} />
-            Export Users
+            <span className="text-sm font-medium">Users</span>
           </button>
           <button
             onClick={() => handleExport('posts')}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500 hover:text-white transition-all"
           >
             <Download size={16} />
-            Export Posts
+            <span className="text-sm font-medium">Posts</span>
           </button>
           <button
             onClick={() => handleExport('activity')}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl hover:bg-purple-500 hover:text-white transition-all"
           >
             <Download size={16} />
-            Export Activity
+            <span className="text-sm font-medium">Activity</span>
           </button>
         </div>
       </div>

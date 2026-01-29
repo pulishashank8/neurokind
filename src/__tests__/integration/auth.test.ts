@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { POST } from '@/app/api/auth/register/route';
 import { createMockRequest, parseResponse } from '../helpers/api';
 import { getTestPrisma } from '../helpers/database';

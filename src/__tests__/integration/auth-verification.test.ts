@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { resetMockData } from '../setup';
 import { POST as registerHandler } from '@/app/api/auth/register/route';
 import { GET as verifyHandler } from '@/app/api/auth/verify-email/route';
 import { POST as resendHandler } from '@/app/api/auth/resend-verification/route';
@@ -17,6 +17,7 @@ import { sendVerificationEmail } from '@/lib/mailer';
 
 describe('Auth Verification Integration', () => {
     beforeEach(async () => {
+        resetMockData();
         vi.clearAllMocks();
         // Use unique emails for tests to avoid collision or cleanup
     });
@@ -84,9 +85,10 @@ describe('Auth Verification Integration', () => {
         const req = createMockRequest('GET', `/api/auth/verify-email?token=${tokenRaw}`);
         const res = await verifyHandler(req);
 
-        expect(res.status).toBe(200);
-        const data = await parseResponse(res);
-        expect(data.success).toBe(true);
+        // It redirects to /login?verified=true
+        expect(res.status).toBeGreaterThanOrEqual(300);
+        expect(res.status).toBeLessThan(400);
+        expect(res.headers.get('location')).toContain('verified=true');
 
         const updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
         expect(updatedUser?.emailVerified).toBe(true);

@@ -126,68 +126,93 @@ export const GET = withApiHandler(async (
   }
 }, { method: 'GET', routeName: '/api/posts/[id]/comments' });
 
-// POST /api/posts/[id]/comments - Create a comment (WITH CRASH PROTECTION)
-export async function POST(
+// POST /api/posts/[id]/comments - Create a comment
+export const POST = withApiHandler(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return unauthorizedError();
-    }
+) => {
+  const requestId = getRequestId(request);
+  const logger = createLogger({ requestId });
 
-    const { id } = await params;
-    const body = await request.json();
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return unauthorizedError();
+  }
 
-    const validation = createCommentSchema.safeParse({ ...body, postId: id });
+  const { id } = await params;
 
-    if (!validation.success) {
-      return errorResponse("VALIDATION_ERROR", "Invalid input", 400, validation.error.errors);
-    }
+  // Verify post exists
+  const post = await prisma.post.findUnique({
+    where: { id },
+    select: { id: true },
+  });
 
-    const canComment = await RATE_LIMITERS.createComment.checkLimit(session.user.id);
-    if (!canComment) {
-      const retryAfter = await RATE_LIMITERS.createComment.getRetryAfter(session.user.id);
-      return rateLimitResponse(retryAfter);
-    }
+  if (!post) {
+    logger.warn({ postId: id }, 'Post not found for comment');
+    return notFoundError("Post");
+  }
 
-    const { content, parentCommentId, isAnonymous } = validation.data;
+  const body = await request.json();
+  const validation = createCommentSchema.safeParse({ ...body, postId: id });
 
-    const sanitizedContent = sanitizeHtml(content);
+  if (!validation.success) {
+    return errorResponse("VALIDATION_ERROR", "Invalid input", 400, validation.error.errors);
+  }
 
-    const [comment] = await prisma.$transaction([
-      prisma.comment.create({
-        data: {
-          content: sanitizedContent,
-          authorId: session.user.id,
-          postId: id,
-          parentCommentId: parentCommentId || null,
-          isAnonymous,
-          status: "ACTIVE",
-        },
-        include: {
-          author: {
-            select: {
-              id: true,
-              profile: {
-                select: { username: true, avatarUrl: true },
-              },
+  const canComment = await RATE_LIMITERS.createComment.checkLimit(session.user.id);
+  if (!canComment) {
+    const retryAfter = await RATE_LIMITERS.createComment.getRetryAfter(session.user.id);
+    return rateLimitResponse(retryAfter);
+  }
+
+  const { content, parentCommentId, isAnonymous } = validation.data;
+  const sanitizedContent = sanitizeHtml(content);
+
+  const [comment] = await prisma.$transaction([
+    prisma.comment.create({
+      data: {
+        content: sanitizedContent,
+        authorId: session.user.id,
+        postId: id,
+        parentCommentId: parentCommentId || null,
+        isAnonymous,
+        status: "ACTIVE",
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            profile: {
+              select: { username: true, avatarUrl: true },
             },
           },
         },
-      }),
-      prisma.post.update({
-        where: { id },
-        data: { commentCount: { increment: 1 } },
-      }),
-    ]);
+      },
+    }),
+    prisma.post.update({
+      where: { id },
+      data: { commentCount: { increment: 1 } },
+    }),
+  ]);
 
-    await invalidateCache(`comments:${id}:*`, { prefix: "posts" });
+  await invalidateCache(`comments:${id}:*`, { prefix: "posts" });
 
-    return successResponse(comment, 201);
-  } catch (outerError: any) {
-    console.error("CRITICAL COMMENT ERROR:", outerError);
-    return errorResponse("INTERNAL_ERROR", "Failed to create comment", 500);
-  }
-}
+  // Format response for anonymity if needed
+  const responseData = isAnonymous ? {
+    ...comment,
+    author: {
+      id: "anonymous",
+      username: "Anonymous",
+      avatarUrl: null,
+    }
+  } : {
+    ...comment,
+    author: {
+      id: comment.author.id,
+      username: comment.author.profile?.username || "Unknown",
+      avatarUrl: comment.author.profile?.avatarUrl || null,
+    }
+  };
+
+  return successResponse(responseData, 201);
+}, { method: 'POST', routeName: '/api/posts/[id]/comments' });

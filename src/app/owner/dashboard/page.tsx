@@ -66,15 +66,15 @@ export default async function OwnerDashboardPage() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-10">
-        <div className="flex items-center gap-3 mb-2">
+      <div className="mb-10 lg:mb-12">
+        <div className="flex items-center gap-3 mb-4">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
             <Sparkles className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Owner Access</span>
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-white mb-2">Dashboard Overview</h1>
-        <p className="text-slate-400">Welcome back. Here's what's happening with NeuroKid.</p>
+        <h1 className="text-3xl lg:text-4xl font-extrabold text-white mb-2 tracking-tight">Dashboard Overview</h1>
+        <p className="text-slate-400 font-medium">Welcome back. Here's what's happening with NeuroKid.</p>
       </div>
 
       {/* Stats Grid */}
@@ -83,15 +83,15 @@ export default async function OwnerDashboardPage() {
           const value = stats[card.key as keyof typeof stats] as number;
           const weekValue = card.weekKey ? stats[card.weekKey as keyof typeof stats] as number : null;
           const Icon = card.icon;
-          
+
           return (
-            <div 
+            <div
               key={card.key}
               className={`group relative bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-white/5 p-6 hover:border-white/10 transition-all duration-300 hover:-translate-y-1 shadow-xl ${card.glow}`}
             >
               {/* Gradient orb */}
               <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${card.gradient} opacity-10 rounded-full blur-3xl group-hover:opacity-20 transition-opacity`}></div>
-              
+
               <div className="relative flex items-start justify-between">
                 <div>
                   <p className="text-slate-400 text-sm font-medium mb-1">{card.title}</p>
@@ -123,15 +123,15 @@ export default async function OwnerDashboardPage() {
               <h2 className="text-lg font-bold text-white">Recent Logins</h2>
               <p className="text-slate-400 text-sm">Latest user activity</p>
             </div>
-            <Link 
-              href="/owner/dashboard/users" 
+            <Link
+              href="/owner/dashboard/users"
               className="px-4 py-2 rounded-lg bg-white/5 text-slate-300 text-sm font-medium hover:bg-white/10 transition-colors"
             >
               View All Users
             </Link>
           </div>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -144,11 +144,10 @@ export default async function OwnerDashboardPage() {
             </thead>
             <tbody>
               {stats.recentLogins.map((user, index) => (
-                <tr 
-                  key={user.id} 
-                  className={`border-b border-white/5 hover:bg-white/5 transition-colors ${
-                    index === 0 ? 'bg-emerald-500/5' : ''
-                  }`}
+                <tr
+                  key={user.id}
+                  className={`border-b border-white/5 hover:bg-white/5 transition-colors ${index === 0 ? 'bg-emerald-500/5' : ''
+                    }`}
                 >
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
@@ -167,11 +166,10 @@ export default async function OwnerDashboardPage() {
                   </td>
                   <td className="py-4 px-6 text-slate-300">{user.email}</td>
                   <td className="py-4 px-6">
-                    <span className={`px-2.5 py-1 rounded-lg text-sm font-medium ${
-                      index === 0 
-                        ? 'bg-emerald-500/10 text-emerald-400' 
+                    <span className={`px-2.5 py-1 rounded-lg text-sm font-medium ${index === 0
+                        ? 'bg-emerald-500/10 text-emerald-400'
                         : 'text-slate-400'
-                    }`}>
+                      }`}>
                       {user.lastLoginAt ? format(user.lastLoginAt, 'MMM d, h:mm a') : 'Never'}
                     </span>
                   </td>

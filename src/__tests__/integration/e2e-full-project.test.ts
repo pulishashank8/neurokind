@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { resetMockData } from '../setup';
 import {
     createTestUser,
     createModeratorUser,
@@ -24,6 +24,7 @@ describe('Full Project End-to-End Tests', () => {
         let post: any;
 
         beforeEach(async () => {
+        resetMockData();
             // Set up test environment for each test because global beforeEach wipes the database
             const suffix = Math.random().toString(36).substring(7);
             regularUser = await createTestUser(`journey-${suffix}@example.com`, 'password123', `journeyuser-${suffix}`);

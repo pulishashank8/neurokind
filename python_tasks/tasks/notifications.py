@@ -1,75 +1,57 @@
-"""Notification and email tasks"""
+
+"""Notification and email tasks - Refactored for Async Repository Pattern"""
+
 
 import os
 import logging
+import requests
 from typing import List, Dict, Any
+from database import get_session
+from repositories import NotificationRepository
 
 logger = logging.getLogger('background_tasks.notifications')
 
 def get_resend_api_key():
     return os.environ.get('RESEND_API_KEY')
 
-def send_pending_emails() -> int:
+async def send_pending_emails() -> int:
+
     """Send pending email notifications"""
     try:
-        import psycopg2
-        
-        db_url = os.environ.get('DATABASE_URL')
-        if not db_url:
-            logger.warning("DATABASE_URL not set")
-            return 0
+        async with get_session() as session:
+            repo = NotificationRepository(session)
             
-        conn = psycopg2.connect(db_url)
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT id, "userId", type, payload 
-            FROM "Notification" 
-            WHERE "readAt" IS NULL AND "createdAt" > NOW() - INTERVAL '24 hours'
-            LIMIT 100
-        ''')
-        
-        pending = cursor.fetchall()
-        
-        if not pending:
-            logger.info("No pending notifications")
-            cursor.close()
-            conn.close()
-            return 0
+            pending = await repo.get_pending_notifications(limit=100)
             
-        sent_count = 0
-        for notification in pending:
-            try:
-                notification_id = notification[0]
+            if not pending:
+                logger.info("No pending notifications")
+                return 0
                 
-                cursor.execute(
-                    'UPDATE "Notification" SET "readAt" = NOW() WHERE id = %s',
-                    (notification_id,)
-                )
-                sent_count += 1
-                
-            except Exception as e:
-                logger.error(f"Failed to process notification {notification[0]}: {e}")
-                
-        conn.commit()
-        cursor.close()
-        conn.close()
-        
-        logger.info(f"Processed {sent_count} notifications")
-        return sent_count
-        
-    except ImportError:
-        logger.error("psycopg2 not installed")
-        return 0
+            sent_count = 0
+            for notification in pending:
+                try:
+                    # In a real app we'd construct the email from the payload
+                    # For now just marking as read to simulate processing
+                    
+                    await repo.mark_as_read(notification.id)
+                    sent_count += 1
+                    
+                except Exception as e:
+                    logger.error(f"Failed to process notification {notification.id}: {e}")
+            
+            await session.commit()
+            
+            logger.info(f"Processed {sent_count} notifications")
+            return sent_count
+            
     except Exception as e:
         logger.error(f"Notification processing error: {e}")
         return 0
 
 
 def send_email(to: str, subject: str, html_body: str) -> bool:
-    """Send an email using Resend API"""
+    """Send an email using Resend API (Synchronous for now)"""
     try:
-        import requests
         
         api_key = get_resend_api_key()
         if not api_key:

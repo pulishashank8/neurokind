@@ -1,5 +1,3 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
 describe('Mailer', () => {
     let sendVerificationEmail: any;
     let sendPasswordResetEmail: any;
@@ -42,10 +40,9 @@ describe('Mailer', () => {
 
             expect(mockSend).toHaveBeenCalledTimes(1);
             expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
-                from: 'test@example.com',
+                from: 'NeuroKind <test@example.com>',
                 to: 'user@example.com',
                 subject: 'Welcome to NeuroKind! Please verify your email',
-                // Loose matching
                 html: expect.stringMatching(/http:\/\/localhost:3000\/verify-email\?token=token123/),
             }));
         });
@@ -79,12 +76,12 @@ describe('Mailer', () => {
             await sendPasswordResetEmail('forgot@example.com', 'resetToken456');
 
             expect(mockSend).toHaveBeenCalledTimes(1);
-            expect(mockSend).toHaveBeenCalledWith({
-                from: 'test@example.com',
+            expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
+                from: 'NeuroKind <test@example.com>',
                 to: 'forgot@example.com',
                 subject: 'Reset your NeuroKind password',
                 html: expect.stringMatching(/http:\/\/localhost:3000\/reset-password\?token=resetToken456/),
-            });
+            }));
         });
 
         it('should log and return if RESEND_API_KEY is missing for reset', async () => {

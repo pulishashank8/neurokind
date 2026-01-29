@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { resetMockData } from '../setup';
 import { POST as lockPost } from '@/app/api/posts/[id]/lock/route';
 import { POST as pinPost } from '@/app/api/posts/[id]/pin/route';
 import { POST as lockAction } from '@/app/api/mod/actions/lock/route';
@@ -36,6 +36,7 @@ describe('Moderation API Integration Tests', () => {
     let testPost: any;
 
     beforeEach(async () => {
+        resetMockData();
         testUser = await createTestUser('regular@example.com', 'password123', 'regularuser');
         moderatorUser = await createModeratorUser('mod@example.com', 'password123', 'moderator');
         testCategory = await getSeededCategory('general-discussion');

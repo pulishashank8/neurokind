@@ -1,138 +1,232 @@
-#!/usr/bin/env python3
-"""
-NeuroKid Background Tasks Service
-Handles scheduled and async background jobs like:
-- Email notifications
-- Data cleanup
-- Analytics processing
-- Report generation
-"""
 
-import os
-import sys
-import time
-import signal
 import logging
-from datetime import datetime
-from typing import Callable, Dict, Any
 import threading
+import time
 import schedule
+import asyncio
+from fastapi import FastAPI, BackgroundTasks
+from contextlib import asynccontextmanager
+import uvicorn
+from pydantic import BaseModel
 
+# Services
+from services.quality import run_quality_checks
+from services.jobs import run_daily_analytics_etl
+from services.unstructured import scan_policies
+from services.ingestion import router as ingestion_router
+from services.ml_models import (
+    run_content_moderation,
+    run_community_health_analysis,
+    run_user_engagement_check,
+    ContentModerationModel,
+    SentimentAnalyzer
+)
+
+# Configure Logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger('background_tasks')
+logger = logging.getLogger('neurokid_data_service')
 
-shutdown_flag = threading.Event()
-
-def signal_handler(signum, frame):
-    logger.info("Shutdown signal received")
-    shutdown_flag.set()
-
-signal.signal(signal.SIGTERM, signal_handler)
-signal.signal(signal.SIGINT, signal_handler)
-
-
-class TaskRunner:
-    def __init__(self):
-        self.tasks: Dict[str, Callable] = {}
-        
-    def register(self, name: str, func: Callable):
-        self.tasks[name] = func
-        logger.info(f"Registered task: {name}")
-        
-    def run_task(self, name: str, **kwargs) -> Any:
-        if name not in self.tasks:
-            logger.error(f"Task not found: {name}")
-            return None
-        try:
-            logger.info(f"Running task: {name}")
-            result = self.tasks[name](**kwargs)
-            logger.info(f"Task completed: {name}")
-            return result
-        except Exception as e:
-            logger.error(f"Task failed: {name} - {e}")
-            raise
-
-
-runner = TaskRunner()
-
-
-def cleanup_old_audit_logs():
-    """Clean up audit logs older than 365 days"""
-    logger.info("Running audit log cleanup...")
+# Helper for running Async jobs in Sync Scheduler
+def run_async(job_func):
     try:
-        from tasks.database import cleanup_audit_logs
-        deleted_count = cleanup_audit_logs(days=365)
-        logger.info(f"Deleted {deleted_count} old audit log entries")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(job_func())
+        loop.close()
     except Exception as e:
-        logger.error(f"Audit log cleanup failed: {e}")
+        logger.error(f"Scheduler failed to run async job: {e}")
 
-
-def process_analytics():
-    """Process user analytics data"""
-    logger.info("Processing analytics...")
-    try:
-        from tasks.analytics import process_daily_analytics
-        process_daily_analytics()
-        logger.info("Analytics processing completed")
-    except Exception as e:
-        logger.error(f"Analytics processing failed: {e}")
-
-
-def send_pending_notifications():
-    """Send pending email notifications"""
-    logger.info("Sending pending notifications...")
-    try:
-        from tasks.notifications import send_pending_emails
-        sent_count = send_pending_emails()
-        logger.info(f"Sent {sent_count} notifications")
-    except Exception as e:
-        logger.error(f"Notification sending failed: {e}")
-
-
-def health_check():
-    """Simple health check task"""
-    logger.info(f"Health check at {datetime.now().isoformat()}")
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
-
-
-runner.register("cleanup_audit_logs", cleanup_old_audit_logs)
-runner.register("process_analytics", process_analytics)
-runner.register("send_notifications", send_pending_notifications)
-runner.register("health_check", health_check)
-
-
-def setup_schedule():
-    """Set up scheduled tasks"""
-    schedule.every().day.at("02:00").do(cleanup_old_audit_logs)
-    schedule.every().day.at("03:00").do(process_analytics)
-    schedule.every(15).minutes.do(send_pending_notifications)
-    schedule.every(5).minutes.do(health_check)
-    logger.info("Scheduled tasks configured")
-
-
+# Scheduler Logic
 def run_scheduler():
-    """Main scheduler loop"""
-    logger.info("Starting background task scheduler...")
-    setup_schedule()
-    
-    while not shutdown_flag.is_set():
+    logger.info("Scheduler thread started")
+    while True:
         schedule.run_pending()
         time.sleep(1)
+
+def setup_schedule():
+    # Schedule ETL to run every night at 2 AM
+    schedule.every().day.at("02:00").do(lambda: run_async(run_daily_analytics_etl))
+    # Run Quality Checks every 6 hours
+    schedule.every(6).hours.do(lambda: run_async(run_quality_checks))
+    # Scan policies daily
+    schedule.every().day.at("04:00").do(lambda: run_async(scan_policies))
+
+    # ML Automations
+    # Content moderation runs every 2 hours to catch new posts quickly
+    schedule.every(2).hours.do(lambda: run_async(run_content_moderation))
+    # Community health analysis runs daily at 6 AM
+    schedule.every().day.at("06:00").do(lambda: run_async(run_community_health_analysis))
+    # User engagement check runs daily at 8 AM
+    schedule.every().day.at("08:00").do(lambda: run_async(run_user_engagement_check))
+
+    logger.info("Scheduled tasks configured (including ML automations)")
+
+# FastAPI Lifespan
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("Starting Data Operations Service...")
+    setup_schedule()
+    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+    scheduler_thread.start()
     
-    logger.info("Scheduler stopped")
+    # Run an initial scan on startup
+    # We can use asyncio.create_task because we are in an async context
+    asyncio.create_task(scan_policies())
+    
+    yield
+    # Shutdown
+    logger.info("Shutting down Data Operations Service...")
+
+app = FastAPI(title="NeuroKid Data Ops", lifespan=lifespan)
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "data-ops"}
+
+app.include_router(ingestion_router, prefix="/api")
+
+@app.post("/api/quality/run")
+async def trigger_quality_checks(background_tasks: BackgroundTasks):
+    background_tasks.add_task(run_quality_checks)
+    return {"status": "triggered", "job": "quality_checks"}
+
+@app.post("/api/jobs/etl/daily")
+async def trigger_etl(background_tasks: BackgroundTasks):
+    background_tasks.add_task(run_daily_analytics_etl)
+    return {"status": "triggered", "job": "daily_analytics_etl"}
+
+@app.post("/api/catalog/scan")
+async def trigger_scan(background_tasks: BackgroundTasks):
+    background_tasks.add_task(scan_policies)
+    return {"status": "triggered", "job": "policy_scan"}
+
+
+# =============================================================================
+# ML AUTOMATION ENDPOINTS
+# =============================================================================
+
+class TextAnalysisRequest(BaseModel):
+    """Request model for text analysis endpoints."""
+    text: str
+
+
+@app.post("/api/ml/moderate")
+async def analyze_content(request: TextAnalysisRequest):
+    """
+    Analyze content for moderation using ML model.
+    Purpose: Real-time content moderation for community safety.
+    """
+    moderator = ContentModerationModel()
+    result = moderator.predict(request.text)
+    return {
+        "status": "success",
+        "analysis": result,
+        "purpose": "Protect NeuroKind community by flagging harmful or spam content"
+    }
+
+
+@app.post("/api/ml/sentiment")
+async def analyze_sentiment(request: TextAnalysisRequest):
+    """
+    Analyze sentiment of text.
+    Purpose: Monitor community emotional health and identify users needing support.
+    """
+    analyzer = SentimentAnalyzer()
+    result = analyzer.analyze(request.text)
+    return {
+        "status": "success",
+        "analysis": result,
+        "purpose": "Identify community members who may need additional support"
+    }
+
+
+@app.post("/api/ml/moderation/run")
+async def trigger_content_moderation(background_tasks: BackgroundTasks):
+    """
+    Trigger batch content moderation job.
+    Purpose: Scan recent posts/comments and flag problematic content.
+    """
+    background_tasks.add_task(run_content_moderation)
+    return {
+        "status": "triggered",
+        "job": "content_moderation",
+        "purpose": "Automated safety screening for community content"
+    }
+
+
+@app.post("/api/ml/community-health/run")
+async def trigger_community_health(background_tasks: BackgroundTasks):
+    """
+    Trigger community health analysis.
+    Purpose: Generate sentiment report to monitor overall community wellbeing.
+    """
+    background_tasks.add_task(run_community_health_analysis)
+    return {
+        "status": "triggered",
+        "job": "community_health_analysis",
+        "purpose": "Track community emotional health and identify support needs"
+    }
+
+
+@app.post("/api/ml/engagement/run")
+async def trigger_engagement_check(background_tasks: BackgroundTasks):
+    """
+    Trigger user engagement analysis.
+    Purpose: Identify users at risk of disengagement to provide proactive support.
+    """
+    background_tasks.add_task(run_user_engagement_check)
+    return {
+        "status": "triggered",
+        "job": "user_engagement_check",
+        "purpose": "Identify and support users who may be disengaging"
+    }
+
+
+@app.get("/api/ml/status")
+def ml_status():
+    """
+    Get ML services status and descriptions.
+    Purpose: Documentation and health check for ML automation services.
+    """
+    return {
+        "status": "healthy",
+        "services": {
+            "content_moderation": {
+                "description": "ML-powered text classification to identify spam, harmful content, and posts needing review",
+                "model": "TF-IDF + Naive Bayes",
+                "schedule": "Every 2 hours",
+                "purpose": "Protect autistic children and families from harmful content"
+            },
+            "sentiment_analysis": {
+                "description": "Sentiment classification to monitor community emotional health",
+                "model": "TF-IDF + Naive Bayes",
+                "schedule": "Daily at 6 AM",
+                "purpose": "Identify parents who may need additional support"
+            },
+            "user_engagement": {
+                "description": "Predictive analytics for user churn risk",
+                "model": "Random Forest + Heuristic Rules",
+                "schedule": "Daily at 8 AM",
+                "purpose": "Proactively engage users before they disengage"
+            },
+            "anomaly_detection": {
+                "description": "Isolation Forest for detecting unusual data patterns",
+                "model": "Isolation Forest",
+                "schedule": "Every 6 hours (with quality checks)",
+                "purpose": "Ensure data quality and detect potential abuse"
+            }
+        },
+        "data_governance": {
+            "framework": "HIPAA Safe Harbor compliant",
+            "phi_detection": "Automatic PHI/PII scanning and redaction",
+            "audit_logging": "Structured JSON audit trails for compliance"
+        }
+    }
 
 
 if __name__ == "__main__":
-    logger.info("NeuroKid Background Tasks Service starting...")
-    
-    health_check()
-    
-    try:
-        run_scheduler()
-    except KeyboardInterrupt:
-        logger.info("Interrupted by user")
-    finally:
-        logger.info("Background Tasks Service stopped")
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
